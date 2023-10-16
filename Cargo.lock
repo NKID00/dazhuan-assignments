@@ -383,6 +383,7 @@ dependencies = [
  "leptos",
  "pest",
  "pest_derive",
+ "web-sys",
 ]
 
 [[package]]
