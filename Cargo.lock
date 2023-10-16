@@ -380,11 +380,9 @@ dependencies = [
  "base64",
  "console_error_panic_hook",
  "itertools 0.11.0",
- "js-sys",
  "leptos",
  "pest",
  "pest_derive",
- "web-sys",
 ]
 
 [[package]]
