@@ -14,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
-      - run: cargo install trunk
         with:
           targets: wasm32-unknown-unknown
+      - run: cargo install trunk
       - run: trunk build --release
       - uses: actions/cache@v3
         with:
