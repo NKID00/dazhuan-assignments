@@ -1,0 +1,18 @@
+[package]
+name = "exp1"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.75"
+base64 = "0.21.4"
+console_error_panic_hook = "0.1.7"
+itertools = "0.11.0"
+js-sys = "0.3.64"
+leptos = { version = "0.5.1", features = ["csr", "nightly"] }
+pest = "2.7.4"
+pest_derive = "2.7.4"
+web-sys = { version = "0.3.64", features = ["Window", "Performance", "console", "Document", "Location"] }
+
+[profile.release]
+lto = true

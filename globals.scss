@@ -1,0 +1,37 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.truth-table {
+  > thead > tr {
+    border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
+  }
+
+  > tbody > tr:last-child {
+    border-bottom: 1px solid #333;
+  }
+}
+
+.truth-table {
+  th:first-child,
+  td:first-child {
+    border-left: 1px solid #333;
+  }
+
+  th:last-child,
+  td:last-child {
+    border-right: 1px solid #333;
+  }
+
+  th,
+  td {
+    text-align: center;
+    padding: 0.3rem 1.5rem;
+  }
+}
