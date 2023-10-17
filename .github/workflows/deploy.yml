@@ -24,7 +24,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           targets: wasm32-unknown-unknown
-      - run: cargo install trunk
+      - run: cargo install --force trunk
       - run: trunk build --release
       - uses: actions/upload-artifact@v3
         with:
