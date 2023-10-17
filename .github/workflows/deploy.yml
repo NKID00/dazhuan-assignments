@@ -29,5 +29,20 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions/upload-artifact@v3
         with:
-          name: dist
+          name: exp1
           path: dist/
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refresh branch dist
+        run: |
+          git branch -d dist
+          git check out -b dist
+          find . -mindepth 1 -maxdepth 1 -not -name .git -exec rm -rf {} +
+      - uses: actions/download-artifact@v3
+        with:
+          path: .
+      - name: Push branch dist
+        run: |
+          git push --force origin dist:dist
