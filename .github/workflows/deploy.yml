@@ -41,7 +41,7 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
       - name: Create branch dist
         run: |
-          git check out -b dist
+          git checkout -b dist
           find . -mindepth 1 -maxdepth 1 -not -name .git -exec rm -rf {} +
       - uses: actions/download-artifact@v3
         with:
