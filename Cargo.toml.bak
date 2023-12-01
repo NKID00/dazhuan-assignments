@@ -1,0 +1,6 @@
+[workspace]
+members = ["assignment/discrete/exp1", "shiyanyi"]
+resolver = "2"
+
+[profile.release]
+lto = true

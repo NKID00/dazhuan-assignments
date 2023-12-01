@@ -1,15 +1,10 @@
-#![feature(return_position_impl_trait_in_trait)]
-
 use std::{
     collections::{HashMap, HashSet},
     ops::Deref,
 };
 
 use itertools::Itertools;
-
-mod boilerplate;
-use boilerplate::Solver;
-
+use shiyanyi::Solver;
 use leptos::*;
 use pest::{
     error::Error as PestError,

@@ -1,5 +1,5 @@
 [package]
-name = "exp1"
+name = "shiyanyi"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,11 +7,7 @@ edition = "2021"
 anyhow = "1.0.75"
 base64 = "0.21.4"
 console_error_panic_hook = "0.1.7"
-itertools = "0.11.0"
 leptos = { version = "0.5.1", features = ["csr", "nightly"] }
-pest = "2.7.4"
-pest_derive = "2.7.4"
+leptos_meta = { version = "0.5.1", features = ["csr", "nightly"] }
 web-sys = { version = "0.3.64", features = ["Window", "Performance"] }
-
-[profile.release]
-lto = true
+stylers = "0.3.1"
