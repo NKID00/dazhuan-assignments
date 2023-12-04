@@ -29,8 +29,8 @@ jobs:
       - run: cargo install trunk
         if: steps.cache.outputs.cache-hit != 'true'
       - run: |
-        cd assignment/discrete/exp1
-        trunk build --release
+          cd assignment/discrete/exp1
+          trunk build --release
       - uses: actions/upload-artifact@v3
         with:
           name: exp1
