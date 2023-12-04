@@ -4,7 +4,6 @@ use std::{
 };
 
 use itertools::Itertools;
-use shiyanyi::Solver;
 use leptos::*;
 use pest::{
     error::Error as PestError,
@@ -13,6 +12,8 @@ use pest::{
     Parser,
 };
 use pest_derive::Parser;
+
+use shiyanyi::{Solver, KaTeX};
 
 #[derive(Parser)]
 #[grammar = "propositional_formula.pest"]
@@ -173,22 +174,22 @@ impl TruthTable<'_> {
                     None
                 } else {
                     Some(format!(
-                        "({})",
+                        r" \left({}\right) ",
                         assignment
                             .keys()
                             .sorted()
                             .map(|p| {
                                 if assignment[p] {
-                                    format!("¬{}", p)
+                                    format!(r"\lnot {}", p)
                                 } else {
                                     format!("{}", p)
                                 }
                             })
-                            .join("∨"),
+                            .join(r" \lor "),
                     ))
                 }
             })
-            .join("∧")
+            .join(r" \land ")
     }
 
     fn disjunctive_normal_form(&self) -> String {
@@ -196,7 +197,7 @@ impl TruthTable<'_> {
             .filter_map(|(assignment, result)| {
                 if *result {
                     Some(format!(
-                        "({})",
+                        r" \left({}\right) ",
                         assignment
                             .keys()
                             .sorted()
@@ -204,16 +205,16 @@ impl TruthTable<'_> {
                                 if assignment[p] {
                                     format!("{}", p)
                                 } else {
-                                    format!("¬{}", p)
+                                    format!(r" \lnot {}", p)
                                 }
                             })
-                            .join("∧"),
+                            .join(r" \land "),
                     ))
                 } else {
                     None
                 }
             })
-            .join("∨")
+            .join(r" \lor ")
     }
 }
 
@@ -263,11 +264,11 @@ impl Solver for DiscreteMathematicsExp1 {
         view! {
             <div class="mb-10">
                 <p class="font-bold mb-2"> "Conjunctive normal form" </p>
-                <pre class="font-mono"> { truth_table.conjunctive_normal_form() } </pre>
+                <KaTeX expr={ truth_table.conjunctive_normal_form() } />
             </div>
             <div class="mb-10">
                 <p class="font-bold mb-2"> "Disjunctive normal form" </p>
-                <pre class="font-mono"> { truth_table.disjunctive_normal_form() } </pre>
+                <KaTeX expr={ truth_table.disjunctive_normal_form() } />
             </div>
             <div class="mb-10">
                 <p class="font-bold mb-2"> "Truth table" </p>
@@ -276,10 +277,10 @@ impl Solver for DiscreteMathematicsExp1 {
                         <tr>
                             {
                                 propositions.iter().map(|p| view! {
-                                    <th> { p.to_string() } </th>
+                                    <th><KaTeX expr={ p.to_string() } /></th>
                                 }).collect_vec()
                             }
-                            <th> { input.clone() } </th>
+                            <th><KaTeX expr={ input.clone() } /></th>
                         </tr>
                     </thead>
                     <tbody> {
@@ -287,10 +288,10 @@ impl Solver for DiscreteMathematicsExp1 {
                             <tr>
                                 {
                                     propositions.iter().map(|p| view! {
-                                        <td> { if assignment[p] { "T" } else { "F" } } </td>
+                                        <td><KaTeX expr={ if assignment[p] { r"\mathbf{T}" } else { r"\mathbf{F}" } } /></td>
                                     }).collect_vec()
                                 }
-                                <td> { if *result { "T" } else { "F" } } </td>
+                                <td><KaTeX expr={ if *result { r"\mathbf{T}" } else { r"\mathbf{F}" } } /></td>
                             </tr>
                         }).collect_vec()
                     } </tbody>

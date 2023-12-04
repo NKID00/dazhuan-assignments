@@ -1,9 +1,9 @@
 name: deploy
 
 on:
-  # push:
-  #   branches:
-  #     - master
+  push:
+    branches:
+      - master
   workflow-dispatch:
 
 jobs:
@@ -28,11 +28,13 @@ jobs:
           targets: wasm32-unknown-unknown
       - run: cargo install trunk
         if: steps.cache.outputs.cache-hit != 'true'
-      - run: trunk build --release
+      - run: |
+        cd assignment/discrete/exp1
+        trunk build --release
       - uses: actions/upload-artifact@v3
         with:
           name: exp1
-          path: dist/
+          path: assignment/discrete/exp1/dist/
   deploy:
     needs: build
     runs-on: ubuntu-latest
