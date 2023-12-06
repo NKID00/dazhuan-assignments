@@ -272,7 +272,7 @@ impl Solver for DiscreteMathematicsExp1 {
             </div>
             <div class="mb-10">
                 <p class="font-bold mb-2"> "Truth table" </p>
-                <table class="truth-table font-mono">
+                <table class="truth-table">
                     <thead>
                         <tr>
                             {
