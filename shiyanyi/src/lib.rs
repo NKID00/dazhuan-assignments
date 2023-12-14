@@ -12,13 +12,6 @@ macro_rules! println {
     ($($t:tt)*) => (leptos::logging::log!($($t)*))
 }
 
-// pub enum InputSpec {
-//     Textarea {
-//         description: View,
-//         default_input: String,
-//     },
-// }
-
 pub trait Solver
 where
     Self: Default + Clone + PartialEq + 'static,
@@ -38,7 +31,6 @@ fn parse_location_hash(default_input: &str) -> String {
             .location()
             .and_then(|l| l.hash().ok())
             .map_or("".to_string(), |h| {
-                println!("hash = {}", h);
                 BASE64_URL_SAFE_NO_PAD
                     .decode(h.splitn(2, '#').last().unwrap())
                     .ok()
@@ -76,7 +68,7 @@ fn SolverComponent<S: Solver>(_solver: PhantomData<S>) -> impl IntoView {
             padding-left: 10%;
             padding-right: 10%;
             padding-bottom: 4rem;
-            background-color: rgb(241 245 249);
+            background-color: rgb(238, 243, 249);
         }
         .solver-title {
             padding-left: 2.5rem;
@@ -94,7 +86,7 @@ fn SolverComponent<S: Solver>(_solver: PhantomData<S>) -> impl IntoView {
             align-items: stretch;
             border-radius: 1rem;
             border-width: 2px;
-            background-color: #ffffff;
+            background-color: rgb(255, 255, 255);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
                 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
@@ -121,14 +113,14 @@ fn SolverComponent<S: Solver>(_solver: PhantomData<S>) -> impl IntoView {
             width: fit-content;
             border-radius: 0.25rem;
             font-weight: 700;
-            color: #ffffff;
-            background-color: rgb(56 189 248);
+            color: rgb(255, 255, 255);
+            background-color: rgb(125, 196, 255);
         }
         .input-section > button:hover {
-            background-color: rgb(14 165 233);
+            background-color: rgb(72, 158, 229);
         }
         .input-section > button:active {
-            background-color: rgb(2 132 199);
+            background-color: rgb(112, 175, 229);
         }
         .answer-section {
             flex: 1;
@@ -140,7 +132,7 @@ fn SolverComponent<S: Solver>(_solver: PhantomData<S>) -> impl IntoView {
             align-items: stretch;
             border-radius: 1rem;
             border-width: 2px;
-            background-color: #ffffff;
+            background-color: rgb(255, 255, 255);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
                 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
