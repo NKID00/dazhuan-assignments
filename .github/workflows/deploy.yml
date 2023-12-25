@@ -27,12 +27,12 @@ jobs:
           targets: wasm32-unknown-unknown
       - run: cargo install trunk
         if: steps.cache.outputs.cache-hit != 'true'
-      - run: |
+      - name: Build
+        run: |
           cd assignment/discrete/exp1
           trunk build --release
       - uses: actions/upload-artifact@v3
         with:
-          name: exp1
           path: assignment/discrete/exp1/dist/
   deploy:
     needs: build
@@ -49,6 +49,7 @@ jobs:
           find . -mindepth 1 -maxdepth 1 -not -name .git -exec rm -rf {} +
       - uses: actions/download-artifact@v3
         with:
+          name: artifact
           path: .
       - name: Commit and push branch dist
         run: |
