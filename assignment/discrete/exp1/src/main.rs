@@ -323,5 +323,5 @@ fn main() {
                 ),
         )
         .build()
-        .boot("/exp1/".to_string());
+        .boot("/".to_string());
 }
