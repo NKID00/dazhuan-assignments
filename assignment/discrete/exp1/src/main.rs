@@ -13,7 +13,7 @@ use pest::{
 };
 use pest_derive::Parser;
 
-use shiyanyi::{Solver, KaTeX};
+use shiyanyi::{KaTeX, Shiyanyi, Solver};
 
 #[derive(Parser)]
 #[grammar = "propositional_formula.pest"]
@@ -45,12 +45,10 @@ impl Expr {
 
     fn from_term(pair: Pair<Rule>) -> Self {
         match pair.as_rule() {
-            Rule::proposition => {
-                match pair.as_str().to_ascii_lowercase().as_str() {
-                    "t" | "true" => Expr::Literal(true),
-                    "f" | "false" => Expr::Literal(false),
-                    _ => Expr::Proposition(pair.as_str().to_string())
-                }
+            Rule::proposition => match pair.as_str().to_ascii_lowercase().as_str() {
+                "t" | "true" => Expr::Literal(true),
+                "f" | "false" => Expr::Literal(false),
+                _ => Expr::Proposition(pair.as_str().to_string()),
             },
             Rule::negation => {
                 Expr::Negation(Box::new(Self::from_term(pair.into_inner().next().unwrap())))
@@ -238,15 +236,15 @@ struct DiscreteMathematicsExp1 {
 }
 
 impl Solver for DiscreteMathematicsExp1 {
-    fn title(&mut self) -> String {
+    fn title(&self) -> String {
         self.title.clone()
     }
 
-    fn default_input(&mut self) -> String {
-        "((P ∧ (T → Q)) → ¬(R ⇄ Q)) ∧ ¬S".to_string()
+    fn default_input(&self) -> String {
+        format!("((P ∧ (T → Q)) → ¬(R ⇄ Q)) ∧ ¬S ∧ {}", self.title)
     }
 
-    fn solve(&mut self, input: String) -> View {
+    fn solve(&self, input: String) -> View {
         let expr = match Expr::parse(input.as_str()) {
             Ok(expr) => expr,
             Err(e) => {
@@ -259,7 +257,6 @@ impl Solver for DiscreteMathematicsExp1 {
             }
         };
         let propositions = expr.propositions().into_iter().sorted().collect_vec();
-        self.title = format!("DiscreteMathematicsExp1 (with {} propositions)", propositions.len());
         let truth_table = expr.truth_table();
         view! {
             <div class="mb-10">
@@ -311,5 +308,20 @@ impl Default for DiscreteMathematicsExp1 {
 }
 
 fn main() {
-    DiscreteMathematicsExp1::boot();
+    Shiyanyi::builder()
+        .section(
+            "discrete".to_string(),
+            "Discrete".to_string(),
+            Shiyanyi::builder()
+                .solver(
+                    "exp1".to_string(),
+                    Box::new(DiscreteMathematicsExp1 { title: "exp1".to_string() }),
+                )
+                .solver(
+                    "exp2".to_string(),
+                    Box::new(DiscreteMathematicsExp1 { title: "exp2".to_string() }),
+                ),
+        )
+        .build()
+        .boot("/exp1/".to_string());
 }
