@@ -140,19 +140,28 @@ fn parse_location_hash(default_input: &str) -> String {
 #[component]
 fn ShiyanyiComponent(path_prefix: String, solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     let (class_name, style_val) = style_str! {
-        .shiyanyi {
+        :deep(html, body) {
+            width: 100%;
+            height: 100%;
+            background-color: rgb(240, 245, 247);
+        }
+        .root {
             display: flex;
             flex-direction: row;
             justify-content: flex-start;
             align-items: stretch;
+            width: 100%;
+            min-height: 100%;
+            padding: 4rem 10% 4rem 5%;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
         }
-        .contents {
+        nav {
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             align-items: stretch;
         }
-        .solver {
+        main {
             flex: 1;
         }
         @media only screen and (max-width: 720px) {
@@ -164,9 +173,9 @@ fn ShiyanyiComponent(path_prefix: String, solver_tree: Vec<SectionOrSolver>) -> 
         class = class_name,
         <Style> { style_val } </Style>
         <Router base={ Box::new(path_prefix.clone()).leak() }>
-            <div class="shiyanyi">
-                <nav class="contents"> <Contents solver_tree set_map_path_solver /> </nav>
-                <main class="solver">
+            <div class="root">
+                <nav> <Contents solver_tree set_map_path_solver /> </nav>
+                <main>
                     <Routes base={ path_prefix.clone() }>
                         <Route path="" view=Outlet >
                             <Route path="*path" view=move || view! { <SolverWrapper map_path_solver /> } />
@@ -184,13 +193,41 @@ fn Contents(
     set_map_path_solver: WriteSignal<HashMap<String, SolverObject>>,
 ) -> impl IntoView {
     let (class_name, style_val) = style_str! {
-        .shiyanyi {
-
+        ol {
+            display: flex;
+            flex-direction: column;
+            margin-left: 1rem;
+        }
+        ol.root {
+            margin-top: 4rem;
+            min-width: 12rem;
+        }
+        summary {
+            padding: 0.5rem 1rem 0.5rem 0;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        li {
+            padding: 0.5rem 0 0.5rem 1rem;
+            border-radius: 0.4rem 0 0 0.4rem;
+        }
+        li.section {
+            display: flex;
+            flex-direction: column;
+        }
+        li.solver:hover {
+            text-decoration: underline;
+        }
+        li.selected {
+            font-weight: 700;
+            background-color: rgb(205, 233, 255);
         }
         @media only screen and (max-width: 720px) {
 
         }
     };
+    let path_selected = use_location().pathname;
+    let path_selected = Signal::derive(move || with!(|path_selected| path_selected[1..].to_string()));
     // convert tree of solver into contents
     let mut stack_solver_tree = vec![VecDeque::from(solver_tree)];
     let mut stack_path = Vec::new();
@@ -219,7 +256,11 @@ fn Contents(
                                 }
                                 sub_contents.1.push_back(view! {
                                     class = class_name,
-                                    <li> <A href={ path }> { toc_title } </A> </li>
+                                    <A href={ path.clone() }>
+                                        <li class="solver" class:selected={
+                                            move || with!(|path_selected| path_selected == &path)
+                                        } > { toc_title } </li>
+                                    </A>
                                 }.into_view());
                             },
                             None => unreachable!(),
@@ -235,8 +276,12 @@ fn Contents(
                                         let solvers = sub_contents.1.into_iter().collect_vec();
                                         parent_sub_contents.1.push_back(view! {
                                             class = class_name,
-                                            <p> { title } </p>
-                                            <ul> { solvers } </ul>
+                                            <li class="section">
+                                                <details open="">
+                                                    <summary> { title } </summary>
+                                                    <ol> { solvers } </ol>
+                                                </details>
+                                            </li>
                                         }.into_view());
                                     },
                                     None => unreachable!(),
@@ -254,36 +299,24 @@ fn Contents(
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        { stack_contents.pop().unwrap().1.into_iter().collect_vec() }
+        <ol class="root"> { stack_contents.pop().unwrap().1.into_iter().collect_vec() } </ol>
     }
 }
 
 #[component]
 fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> impl IntoView {
     let (class_name, style_val) = style_str! {
-        :deep(html, body) {
-            width: 100%;
-            height: 100%;
-        }
         .solver {
             display: flex;
             margin: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
             flex-direction: column;
             justify-content: flex-start;
             align-items: stretch;
-            width: 100%;
-            min-height: 100%;
             gap: 2rem;
-            padding-left: 10%;
-            padding-right: 10%;
-            padding-bottom: 4rem;
-            background-color: rgb(238, 243, 249);
         }
         .solver-title {
             padding-left: 2.5rem;
             padding-right: 2.5rem;
-            margin-top: 4rem;
             font-size: 2.25rem;
             line-height: 2.5rem;
         }
@@ -295,7 +328,6 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             justify-content: flex-start;
             align-items: stretch;
             border-radius: 1rem;
-            border-width: 2px;
             background-color: rgb(255, 255, 255);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
                 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -341,7 +373,6 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             justify-content: flex-start;
             align-items: stretch;
             border-radius: 1rem;
-            border-width: 2px;
             background-color: rgb(255, 255, 255);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
                 0 10px 10px -5px rgba(0, 0, 0, 0.04);
