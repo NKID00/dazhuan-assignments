@@ -83,10 +83,22 @@ impl Shiyanyi {
         EmptyShiyanyiBuilder
     }
 
-    pub fn boot(self) {
+    pub fn boot(self, mount_point_element_id: &str) {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
+        let mount_point: web_sys::HtmlElement = document()
+            .get_element_by_id(mount_point_element_id)
+            .expect("cannot find mount point with specified id")
+            .dyn_into()
+            .unwrap();
+        mount_point.replace_children_with_node_0();
+        for attr in mount_point.get_attribute_names().into_iter() {
+            let attr = attr.as_string().unwrap();
+            if attr != "id" {
+                mount_point.remove_attribute(attr.as_str()).unwrap();
+            }
+        }
         mount_to(
-            crate::document().body().unwrap(),
+            mount_point,
             move || view! { <ShiyanyiComponent solver_tree={ self.children } /> },
         );
     }
@@ -172,11 +184,6 @@ fn parse_location_hash(default_input: &str) -> String {
 #[component]
 fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     let (class_name, style_val) = style_str! {
-        :deep(html, body) {
-            width: 100%;
-            height: 100%;
-            background-color: rgb(240, 245, 247);
-        }
         .root {
             display: flex;
             flex-direction: row;
@@ -184,8 +191,7 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
             align-items: stretch;
             width: 100%;
             min-height: 100%;
-            padding: 4rem 5% 4rem 5%;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            padding: 3rem 5% 1rem 5%;
             color: rgb(63, 63, 66);
         }
         nav {
@@ -194,7 +200,7 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
             justify-content: flex-start;
             align-items: stretch;
             align-self: start;
-            margin: 4.5rem 2rem 0 0;
+            margin: 4rem 1.5rem 0 0;
             padding: 1rem 0 1rem 1rem;
             border-radius: 0.5rem;
             background: rgb(255, 255, 255);
@@ -211,8 +217,8 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        <Link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous"></Link>
-        <Script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></Script>
+        <Link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
+        <Script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" />
         <Router>
             <div class="root">
                 <nav> <Contents solver_tree set_map_path_solver /> </nav>
@@ -250,7 +256,7 @@ fn Contents(
             cursor: pointer;
         }
         li.header {
-            padding: 0 0 1rem 1rem;
+            padding: 0 0 0.5rem 1rem;
             font-weight: 700;
             font-size: 1.25rem;
         }
@@ -377,12 +383,13 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             flex-direction: column;
             justify-content: flex-start;
             align-items: stretch;
-            gap: 2rem;
+            gap: 1.5rem;
         }
         .solver-title {
             padding-left: 2.5rem;
             padding-right: 2.5rem;
             font-size: 2.25rem;
+            font-weight: 900;
             line-height: 2.5rem;
         }
         .input-section {
@@ -418,6 +425,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             align-self: start;
             width: fit-content;
             border-radius: 0.25rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: rgb(255, 255, 255);
             background-color: rgb(125, 196, 255);
@@ -449,7 +457,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
         .answer-section > div {
             margin-left: 2rem;
             margin-right: 2rem;
-            overflow: scroll;
+            overflow-x: auto;
             min-height: 6rem;
         }
         @media only screen and (max-width: 1024px) {

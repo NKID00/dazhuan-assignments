@@ -1,6 +1,13 @@
-pre {
+html,
+body {
+  background-color: rgb(240, 245, 247);
+  font-family: "Atkinson Hyperlegible", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+code, pre {
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  font-family: "DejaVu Sans Mono", ui-monospace, monospace;
 }
 
 .truth-table {
