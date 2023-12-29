@@ -309,19 +309,63 @@ impl Default for DiscreteMathematicsExp1 {
 
 fn main() {
     Shiyanyi::builder()
+        .solver(
+            "exp1".to_string(),
+            Box::new(DiscreteMathematicsExp1 {
+                title: "exp1".to_string(),
+            }),
+        )
         .section(
-            "discrete".to_string(),
-            "Discrete".to_string(),
+            "discrete1".to_string(),
+            "Discrete1".to_string(),
             Shiyanyi::builder()
                 .solver(
-                    "exp1".to_string(),
-                    Box::new(DiscreteMathematicsExp1 { title: "exp1".to_string() }),
+                    "exp2".to_string(),
+                    Box::new(DiscreteMathematicsExp1 {
+                        title: "exp2".to_string(),
+                    }),
                 )
                 .solver(
-                    "exp2".to_string(),
-                    Box::new(DiscreteMathematicsExp1 { title: "exp2".to_string() }),
+                    "exp3".to_string(),
+                    Box::new(DiscreteMathematicsExp1 {
+                        title: "exp3".to_string(),
+                    }),
+                )
+                .section(
+                    "discrete1".to_string(),
+                    "Discrete1".to_string(),
+                    Shiyanyi::builder()
+                        .solver(
+                            "exp4".to_string(),
+                            Box::new(DiscreteMathematicsExp1 {
+                                title: "exp4".to_string(),
+                            }),
+                        )
+                        .solver(
+                            "exp5".to_string(),
+                            Box::new(DiscreteMathematicsExp1 {
+                                title: "exp5".to_string(),
+                            }),
+                        ),
+                ),
+        )
+        .section(
+            "discrete2".to_string(),
+            "Discrete2".to_string(),
+            Shiyanyi::builder()
+                .solver(
+                    "exp6".to_string(),
+                    Box::new(DiscreteMathematicsExp1 {
+                        title: "exp6".to_string(),
+                    }),
+                )
+                .solver(
+                    "exp7".to_string(),
+                    Box::new(DiscreteMathematicsExp1 {
+                        title: "exp7".to_string(),
+                    }),
                 ),
         )
         .build()
-        .boot("/".to_string());
+        .boot();
 }

@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, VecDeque},
-    panic,
+    fmt, panic,
     rc::Rc,
 };
 
@@ -19,6 +19,7 @@ macro_rules! println {
 }
 
 #[must_use]
+#[derive(Debug)]
 pub struct EmptyShiyanyiBuilder;
 
 impl EmptyShiyanyiBuilder {
@@ -38,6 +39,7 @@ impl EmptyShiyanyiBuilder {
 }
 
 #[must_use]
+#[derive(Debug)]
 pub struct ShiyanyiBuilder {
     children: Vec<SectionOrSolver>,
 }
@@ -69,6 +71,7 @@ impl ShiyanyiBuilder {
     }
 }
 
+#[derive(Debug)]
 pub struct Shiyanyi {
     children: Vec<SectionOrSolver>,
 }
@@ -78,11 +81,11 @@ impl Shiyanyi {
         EmptyShiyanyiBuilder
     }
 
-    pub fn boot(self, path_prefix: String) {
+    pub fn boot(self) {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
         mount_to(
             crate::document().body().unwrap(),
-            move || view! { <ShiyanyiComponent path_prefix solver_tree={ self.children } /> },
+            move || view! { <ShiyanyiComponent solver_tree={ self.children } /> },
         );
     }
 }
@@ -98,6 +101,33 @@ enum SectionOrSolver {
         toc_title: String,
         solver: SolverObject,
     },
+}
+
+impl fmt::Debug for SectionOrSolver {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Section {
+                id,
+                title,
+                children,
+            } => f
+                .debug_struct("Section")
+                .field("id", id)
+                .field("title", title)
+                .field("children", children)
+                .finish(),
+            Self::Solver {
+                id,
+                toc_title,
+                solver,
+            } => f
+                .debug_struct("Solver")
+                .field("id", id)
+                .field("toc_title", toc_title)
+                .field("solver", &solver.title())
+                .finish(),
+        }
+    }
 }
 
 type SolverObject = Rc<Box<dyn Solver>>;
@@ -138,7 +168,7 @@ fn parse_location_hash(default_input: &str) -> String {
 }
 
 #[component]
-fn ShiyanyiComponent(path_prefix: String, solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
+fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     let (class_name, style_val) = style_str! {
         :deep(html, body) {
             width: 100%;
@@ -172,11 +202,13 @@ fn ShiyanyiComponent(path_prefix: String, solver_tree: Vec<SectionOrSolver>) -> 
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        <Router base={ Box::new(path_prefix.clone()).leak() }>
+        <Link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous"></Link>
+        <Script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></Script>
+        <Router>
             <div class="root">
                 <nav> <Contents solver_tree set_map_path_solver /> </nav>
                 <main>
-                    <Routes base={ path_prefix.clone() }>
+                    <Routes>
                         <Route path="" view=Outlet >
                             <Route path="*path" view=move || view! { <SolverWrapper map_path_solver /> } />
                         </Route>
@@ -227,18 +259,20 @@ fn Contents(
         }
     };
     let path_selected = use_location().pathname;
-    let path_selected = Signal::derive(move || with!(|path_selected| path_selected[1..].to_string()));
+    let path_selected =
+        Signal::derive(move || with!(|path_selected| path_selected[1..].to_string()));
     // convert tree of solver into contents
     let mut stack_solver_tree = vec![VecDeque::from(solver_tree)];
     let mut stack_path = Vec::new();
     let mut stack_contents = vec![(String::new(), VecDeque::new())];
     let mut map_path_solver_value = HashMap::new();
     let mut default_path = None;
-    loop {
+    let contents = loop {
         match stack_solver_tree.pop() {
             Some(mut sub_solver_tree) => {
                 match sub_solver_tree.pop_front() {
                     Some(SectionOrSolver::Section { id, title, children }) => {
+                        stack_solver_tree.push(sub_solver_tree);
                         stack_solver_tree.push(VecDeque::from(children));
                         stack_path.push(id);
                         stack_contents.push((title, VecDeque::new()));
@@ -247,7 +281,11 @@ fn Contents(
                         stack_solver_tree.push(sub_solver_tree);
                         match stack_contents.last_mut() {
                             Some(sub_contents) => {
-                                let path = format!("{}/{}", stack_path.iter().join("/"), id);
+                                let path = if stack_path.is_empty() {
+                                    id
+                                } else {
+                                    format!("{}/{}", stack_path.iter().join("/"), id)
+                                };
                                 if default_path.is_none() {
                                     default_path = Some(path.clone());
                                 }
@@ -269,11 +307,11 @@ fn Contents(
                     None /* a sub tree has been fully converted, pop it and sum up its views */ => {
                         match stack_contents.pop() {
                             Some(sub_contents) => {
-                                stack_path.pop().unwrap();
+                                let title = sub_contents.0;
+                                let solvers = sub_contents.1.into_iter().collect_vec();
                                 match stack_contents.last_mut() {
                                     Some(parent_sub_contents) => {
-                                        let title = sub_contents.0;
-                                        let solvers = sub_contents.1.into_iter().collect_vec();
+                                        stack_path.pop().unwrap();
                                         parent_sub_contents.1.push_back(view! {
                                             class = class_name,
                                             <li class="section">
@@ -284,7 +322,12 @@ fn Contents(
                                             </li>
                                         }.into_view());
                                     },
-                                    None => unreachable!(),
+                                    None /* parent is root, conversion finishes */ => {
+                                        break view! {
+                                            class = class_name,
+                                            <ol class="root"> {solvers} </ol>
+                                        };
+                                    },
                                 }
                             },
                             None => unreachable!(),
@@ -292,14 +335,21 @@ fn Contents(
                     },
                 }
             }
-            None => break,
+            None => unreachable!(),
         }
-    }
+    };
     set_map_path_solver(map_path_solver_value);
+    let default_path = default_path.unwrap();
+    let navigate = use_navigate();
+    create_effect(move |_| {
+        if with!(|path_selected| path_selected.is_empty()) {
+            navigate(default_path.as_str(), Default::default());
+        }
+    });
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        <ol class="root"> { stack_contents.pop().unwrap().1.into_iter().collect_vec() } </ol>
+        { contents }
     }
 }
 
@@ -490,8 +540,6 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
 
     view! {
         class = class_name,
-        <Link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous"></Link>
-        <Script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></Script>
         <Style> { style_val } </Style>
         <Show
             when=move || with!(move |s| s.is_some())
@@ -538,9 +586,6 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
         </Show>
     }
 }
-
-#[component]
-fn SingleSolverWrapper() -> impl IntoView {}
 
 #[wasm_bindgen]
 extern "C" {
