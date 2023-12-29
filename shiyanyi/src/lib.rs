@@ -55,7 +55,7 @@ impl ShiyanyiBuilder {
     }
 
     pub fn solver(mut self, id: impl ToString, solver: Box<dyn Solver>) -> Self {
-        // FIXME: constrain id to ascii alphanumeric
+        // FIXME: constrain id to be url safe
         self.children.push(SectionOrSolver::Solver {
             id: id.to_string(),
             toc_title: solver.toc_title(),
@@ -63,6 +63,8 @@ impl ShiyanyiBuilder {
         });
         self
     }
+
+    // TODO: pub fn alias(mut self, title: String, target: String) -> Self
 
     pub fn build(self) -> Shiyanyi {
         Shiyanyi {
@@ -182,19 +184,26 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
             align-items: stretch;
             width: 100%;
             min-height: 100%;
-            padding: 4rem 10% 4rem 5%;
+            padding: 4rem 5% 4rem 5%;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            color: rgb(63, 63, 66);
         }
         nav {
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             align-items: stretch;
+            align-self: start;
+            margin: 4.5rem 2rem 0 0;
+            padding: 1rem 0 1rem 1rem;
+            border-radius: 0.5rem;
+            background: rgb(255, 255, 255);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         main {
             flex: 1;
         }
-        @media only screen and (max-width: 720px) {
+        @media only screen and (max-width: 1024px) {
 
         }
     };
@@ -228,24 +237,30 @@ fn Contents(
         ol {
             display: flex;
             flex-direction: column;
-            margin-left: 1rem;
         }
         ol.root {
-            margin-top: 4rem;
             min-width: 12rem;
+        }
+        ol.section {
+            border-left: 1px solid rgb(205, 233, 255);
         }
         summary {
             padding: 0.5rem 1rem 0.5rem 0;
             font-weight: 700;
             cursor: pointer;
         }
-        li {
-            padding: 0.5rem 0 0.5rem 1rem;
-            border-radius: 0.4rem 0 0 0.4rem;
+        li.header {
+            padding: 0 0 1rem 1rem;
+            font-weight: 700;
+            font-size: 1.25rem;
         }
         li.section {
             display: flex;
             flex-direction: column;
+            margin-left: 1.5rem;
+        }
+        li.solver {
+            padding: 0.5rem 0 0.5rem 1.25rem;
         }
         li.solver:hover {
             text-decoration: underline;
@@ -254,7 +269,7 @@ fn Contents(
             font-weight: 700;
             background-color: rgb(205, 233, 255);
         }
-        @media only screen and (max-width: 720px) {
+        @media only screen and (max-width: 1024px) {
 
         }
     };
@@ -317,16 +332,13 @@ fn Contents(
                                             <li class="section">
                                                 <details open="">
                                                     <summary> { title } </summary>
-                                                    <ol> { solvers } </ol>
+                                                    <ol class="section"> { solvers } </ol>
                                                 </details>
                                             </li>
                                         }.into_view());
                                     },
                                     None /* parent is root, conversion finishes */ => {
-                                        break view! {
-                                            class = class_name,
-                                            <ol class="root"> {solvers} </ol>
-                                        };
+                                        break solvers
                                     },
                                 }
                             },
@@ -349,7 +361,10 @@ fn Contents(
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        { contents }
+        <ol class="root">
+            <li class="header"> Contents </li>
+            {contents}
+        </ol>
     }
 }
 
@@ -377,10 +392,9 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             gap: 1rem;
             justify-content: flex-start;
             align-items: stretch;
-            border-radius: 1rem;
+            border-radius: 0.75rem;
             background-color: rgb(255, 255, 255);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .input-section > h2{
             margin-bottom: 1rem;
@@ -422,10 +436,9 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             gap: 1rem;
             justify-content: flex-start;
             align-items: stretch;
-            border-radius: 1rem;
+            border-radius: 0.75rem;
             background-color: rgb(255, 255, 255);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .answer-section > h2 {
             margin-bottom: 1rem;
@@ -439,7 +452,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             overflow: scroll;
             min-height: 6rem;
         }
-        @media only screen and (max-width: 720px) {
+        @media only screen and (max-width: 1024px) {
             .solver {
                 padding-left: 1.5%;
                 padding-right: 1.5%;
