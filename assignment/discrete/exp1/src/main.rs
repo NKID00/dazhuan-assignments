@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     ops::Deref,
+    panic,
 };
 
 use itertools::Itertools;
@@ -308,6 +309,7 @@ impl Default for DiscreteMathematicsExp1 {
 }
 
 fn main() {
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
     Shiyanyi::builder()
         .solver(
             "exp1".to_string(),

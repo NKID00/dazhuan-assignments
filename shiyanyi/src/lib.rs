@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, VecDeque},
-    fmt, panic,
+    fmt,
     rc::Rc,
 };
 
@@ -23,14 +23,19 @@ macro_rules! println {
 pub struct EmptyShiyanyiBuilder;
 
 impl EmptyShiyanyiBuilder {
-    pub fn section(self, id: String, title: String, children: ShiyanyiBuilder) -> ShiyanyiBuilder {
+    pub fn section(
+        self,
+        id: impl ToString,
+        title: impl ToString,
+        children: ShiyanyiBuilder,
+    ) -> ShiyanyiBuilder {
         let builder = ShiyanyiBuilder {
             children: Vec::new(),
         };
         builder.section(id, title, children)
     }
 
-    pub fn solver(self, id: String, solver: Box<dyn Solver>) -> ShiyanyiBuilder {
+    pub fn solver(self, id: impl ToString, solver: Box<dyn Solver>) -> ShiyanyiBuilder {
         let builder = ShiyanyiBuilder {
             children: Vec::new(),
         };
@@ -45,19 +50,26 @@ pub struct ShiyanyiBuilder {
 }
 
 impl ShiyanyiBuilder {
-    pub fn section(mut self, id: String, title: String, children: Self) -> Self {
+    pub fn section(mut self, id: impl ToString, title: impl ToString, children: Self) -> Self {
+        let id = id.to_string();
+        if id.contains(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_')) {
+            panic!("id is not url safe: {}", id);
+        }
         self.children.push(SectionOrSolver::Section {
             id,
-            title,
+            title: title.to_string(),
             children: children.children,
         });
         self
     }
 
     pub fn solver(mut self, id: impl ToString, solver: Box<dyn Solver>) -> Self {
-        // FIXME: constrain id to be url safe
+        let id = id.to_string();
+        if id.contains(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_')) {
+            panic!("id is not url safe: {}", id);
+        }
         self.children.push(SectionOrSolver::Solver {
-            id: id.to_string(),
+            id,
             toc_title: solver.toc_title(),
             solver: Rc::new(solver),
         });
@@ -84,7 +96,6 @@ impl Shiyanyi {
     }
 
     pub fn boot(self, mount_point_element_id: &str) {
-        panic::set_hook(Box::new(console_error_panic_hook::hook));
         let mount_point: web_sys::HtmlElement = document()
             .get_element_by_id(mount_point_element_id)
             .expect("cannot find mount point with specified id")
@@ -158,32 +169,44 @@ pub trait Solver {
     fn solve(&self, input: String) -> View;
 }
 
-fn parse_location_hash(default_input: &str) -> String {
-    let hash_parsed =
-        document()
-            .location()
-            .and_then(|l| l.hash().ok())
-            .map_or("".to_string(), |h| {
-                BASE64_URL_SAFE_NO_PAD
-                    .decode(h.splitn(2, '#').last().unwrap())
-                    .ok()
-                    .and_then(|bytes| String::from_utf8(bytes).ok())
-                    .unwrap_or("".to_string())
-            });
-    match hash_parsed.as_str() {
-        "" => {
-            if let Some(location) = document().location() {
-                let _ = location.set_hash(BASE64_URL_SAFE_NO_PAD.encode(default_input).as_str());
-            };
-            default_input.to_string()
-        }
-        _ => hash_parsed,
-    }
+pub fn escape_uri_component(s: &str) -> String {
+    js_sys::encode_uri_component(s).as_string().unwrap()
+}
+
+pub fn unescape_uri_component(s: &str) -> String {
+    js_sys::decode_uri_component(s)
+        .unwrap()
+        .as_string()
+        .unwrap()
+}
+
+fn set_location_hash_base64_encode(s: &str) {
+    document()
+        .location()
+        .unwrap()
+        .set_hash(BASE64_URL_SAFE_NO_PAD.encode(s).as_str())
+        .unwrap();
+}
+
+fn get_location_hash_base64_decode() -> Option<String> {
+    document()
+        .location()
+        .and_then(|l| l.hash().ok())
+        .and_then(|h| if h.is_empty() { None } else { Some(h) })
+        .and_then(|h| {
+            BASE64_URL_SAFE_NO_PAD
+                .decode(h.splitn(2, '#').last().unwrap())
+                .ok()
+                .and_then(|bytes| String::from_utf8(bytes).ok())
+        })
 }
 
 #[component]
 fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     let (class_name, style_val) = style_str! {
+        :deep(#shiyanyi) {
+            flex: 1;
+        }
         .root {
             display: flex;
             flex-direction: row;
@@ -208,6 +231,10 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
         }
         main {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            align-items: stretch;
         }
         @media only screen and (max-width: 1024px) {
 
@@ -376,6 +403,19 @@ fn Contents(
 
 #[component]
 fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> impl IntoView {
+    let (class_name_not_found, style_val_not_found) = style_str! {
+        div {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: stretch;
+        }
+        h1 {
+            font-size: 3rem;
+            text-align: center;
+        }
+    };
     let (class_name, style_val) = style_str! {
         .solver {
             display: flex;
@@ -528,43 +568,48 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
     });
     let (answer, set_answer) = create_signal(None);
     let (duration, set_duration) = create_signal(None);
-    create_effect(move |_| {
+    create_effect(move |first_run| {
         with!(|s| document().set_title(
             s.as_ref()
                 .map_or("Not Found".to_string(), |s| s.title())
                 .as_str()
         ));
         if let Some(input) = input.get_untracked() {
-            default_input.with_untracked(|default_input| input.set_value(default_input.as_str()));
-        };
+            if first_run.is_none() {
+                if let Some(input_from_hash) = get_location_hash_base64_decode() {
+                    input.set_value(input_from_hash.as_str());
+                } else {
+                    default_input
+                        .with_untracked(|default_input| input.set_value(default_input.as_str()));
+                }
+            } else {
+                default_input
+                    .with_untracked(|default_input| input.set_value(default_input.as_str()));
+            }
+        }
         set_duration(None);
         set_answer(None);
     });
-    // TODO: include base64'd input in uri hash
-    // window_event_listener(ev::hashchange, move |_| {
-    //     if let Some(input) = input() {
-    //         if let Some(default_input) =
-    //             with!(move |solver| solver.clone().map(|solver| solver.default_input()))
-    //         {
-    //             let new_input = parse_location_hash(default_input.as_str());
-    //             if new_input != input.value() {
-    //                 input.set_value(new_input.as_str());
-    //             }
-    //         }
-    //     }
-    // });
-    // let previous_input = parse_location_hash(default_input.as_str());
-    // let previous_input = match previous_input.as_str() {
-    //     "" => default_input.clone(),
-    //     _ => previous_input,
-    // };
+    window_event_listener(ev::hashchange, move |_| {
+        if let Some(input) = input() {
+            if let Some(input_from_hash) = get_location_hash_base64_decode() {
+                if input.value() != input_from_hash.as_str() {
+                    input.set_value(input_from_hash.as_str());
+                }
+            }
+        }
+    });
 
     view! {
         class = class_name,
+        <Style> { style_val_not_found } </Style>
         <Style> { style_val } </Style>
         <Show
             when=move || with!(move |s| s.is_some())
-            fallback=|| view! { <p> "Not Found" </p> }
+            fallback=move || view! {
+                class = class_name_not_found,
+                <div> <h1> "Not Found" </h1> </div>
+            }
         >
             <div class="solver">
                 <h1 class="solver-title"> { move || with!(move |s| s.as_ref().unwrap().title()) } </h1>
@@ -578,16 +623,13 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
                         };
                         let input_string = match input.value().as_str() {
                             "" => {
-                                default_input.with_untracked(|default_input| {
-                                    input.set_value(default_input);
-                                    default_input.clone()
-                                })
+                                let default_input = default_input.get_untracked();
+                                input.set_value(default_input.as_str());
+                                default_input
                             }
                             s => s.to_string(),
                         };
-                        // if let Some(location) = document().location() {
-                        //     let _ = location.set_hash(BASE64_URL_SAFE_NO_PAD.encode(input_string.as_str()).as_str());
-                        // }
+                        set_location_hash_base64_encode(input_string.as_str());
                         let begin = window().performance().unwrap().now();
                         let answer = s.with_untracked(|s| s.as_ref().unwrap().solve(input_string));
                         set_duration(Some(1.max((window().performance().unwrap().now() - begin) as u64)));
