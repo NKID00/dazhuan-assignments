@@ -1,10 +1,15 @@
 use std::{
     collections::{HashMap, VecDeque},
     fmt,
+    io::Read,
     rc::Rc,
 };
 
 use base64::prelude::*;
+use flate2::{
+    bufread::{DeflateDecoder, DeflateEncoder},
+    Compression,
+};
 use itertools::Itertools;
 use js_sys::{Object, Reflect};
 use leptos::*;
@@ -197,22 +202,33 @@ pub fn unescape_uri_component(s: &str) -> String {
         .unwrap()
 }
 
-fn set_location_hash_base64_encode(s: &str) {
+fn set_location_hash_encoded(s: &str) {
+    let mut deflate = Vec::new();
+    DeflateEncoder::new(s.as_bytes(), Compression::best())
+        .read_to_end(&mut deflate)
+        .unwrap();
+    let base64 = BASE64_URL_SAFE_NO_PAD.encode(deflate);
     document()
         .location()
         .unwrap()
-        .set_hash(BASE64_URL_SAFE_NO_PAD.encode(s).as_str())
+        .set_hash(base64.as_str())
         .unwrap();
 }
 
-fn get_location_hash_base64_decode() -> Option<String> {
+fn get_location_hash_decoded() -> Option<String> {
     location_hash()
         .and_then(|h| if h.is_empty() { None } else { Some(h) })
         .and_then(|h| {
             BASE64_URL_SAFE_NO_PAD
                 .decode(h.splitn(2, '#').last().unwrap())
                 .ok()
-                .and_then(|bytes| String::from_utf8(bytes).ok())
+        })
+        .and_then(|bytes| {
+            let mut s = String::new();
+            DeflateDecoder::new(bytes.as_slice())
+                .read_to_string(&mut s)
+                .ok()
+                .map(|_| s)
         })
 }
 
@@ -615,7 +631,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
         ));
         if let Some(input) = input.get_untracked() {
             if first_run.is_none() {
-                if let Some(input_from_hash) = get_location_hash_base64_decode() {
+                if let Some(input_from_hash) = get_location_hash_decoded() {
                     input.set_value(input_from_hash.as_str());
                 } else {
                     default_input
@@ -631,7 +647,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
     });
     window_event_listener(ev::hashchange, move |_| {
         if let Some(input) = input() {
-            if let Some(input_from_hash) = get_location_hash_base64_decode() {
+            if let Some(input_from_hash) = get_location_hash_decoded() {
                 if input.value() != input_from_hash.as_str() {
                     input.set_value(input_from_hash.as_str());
                 }
@@ -671,7 +687,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
                             }
                             s => s.to_string(),
                         };
-                        set_location_hash_base64_encode(input_string.as_str());
+                        set_location_hash_encoded(input_string.as_str());
                         let begin = window().performance().unwrap().now();
                         let answer = s.with_untracked(|s| s.as_ref().unwrap().solve(input_string));
                         set_duration(Some(1.max((window().performance().unwrap().now() - begin) as u64)));
