@@ -31,7 +31,7 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
       - run: cargo install trunk
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cargo.outputs.cache-hit != 'true'
       - name: Build
         run: |
           cd assignment
