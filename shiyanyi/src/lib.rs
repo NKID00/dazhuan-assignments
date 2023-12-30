@@ -216,6 +216,7 @@ fn get_location_hash_base64_decode() -> Option<String> {
 
 #[component]
 fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
+    provide_meta_context();
     let (class_name, style_val) = style_str! {
         :deep(#shiyanyi) {
             flex: 1;

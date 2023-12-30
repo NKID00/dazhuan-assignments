@@ -3,6 +3,7 @@ use std::panic;
 use shiyanyi::Shiyanyi;
 
 mod discrete;
+mod common;
 
 fn main() {
     panic::set_hook(Box::new(console_error_panic_hook::hook));

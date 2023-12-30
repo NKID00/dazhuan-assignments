@@ -5,8 +5,13 @@ edition = "2021"
 
 [dependencies]
 shiyanyi = { path = "../shiyanyi" }
-itertools = "0.11.0"
 leptos = { version = "0.5.1", features = ["csr", "nightly"] }
+leptos_meta = { version = "0.5.1", features = ["csr", "nightly"] }
+stylers = "0.3.2"
+console_error_panic_hook = "0.1.7"
+eyre = "0.6.9"
+num = "0.4.1"
+itertools = "0.11.0"
 pest = "2.7.4"
 pest_derive = "2.7.4"
-console_error_panic_hook = "0.1.7"
+indoc = "2"
