@@ -13,8 +13,18 @@ use crate::common::Matrix;
 pub struct Exp2;
 
 impl Solver for Exp2 {
+    fn id(&self) -> String {
+        "exp2".to_string()
+    }
+
     fn title(&self) -> String {
         "集合上二元关系性质判定".to_string()
+    }
+
+    fn description(&self) -> View {
+        view! {
+            <p> "输入关系矩阵." </p>
+        }.into_view()
     }
 
     fn default_input(&self) -> String {

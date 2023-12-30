@@ -234,8 +234,18 @@ impl<'a> Deref for TruthTable<'a> {
 pub struct Exp1;
 
 impl Solver for Exp1 {
+    fn id(&self) -> String {
+        "exp1".to_string()
+    }
+
     fn title(&self) -> String {
         "利用真值表求主析取范式和主合取范式".to_string()
+    }
+
+    fn description(&self) -> View {
+        view! {
+            <p> "输入命题公式." </p>
+        }.into_view()
     }
 
     fn default_input(&self) -> String {

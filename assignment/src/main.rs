@@ -12,10 +12,10 @@ fn main() {
             "discrete",
             "离散数学",
             Shiyanyi::builder()
-                .solver_default::<discrete::Exp1>("exp1")
-                .solver_default::<discrete::Exp2>("exp2")
-                .solver_default::<discrete::Exp3>("exp3")
-                .solver_default::<discrete::Exp4>("exp4")
+                .solver_default::<discrete::Exp1>()
+                .solver_default::<discrete::Exp2>()
+                .solver_default::<discrete::Exp3>()
+                .solver_default::<discrete::Exp4>()
         )
         .build()
         .boot("shiyanyi");

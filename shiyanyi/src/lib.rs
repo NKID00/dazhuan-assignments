@@ -36,18 +36,18 @@ impl EmptyShiyanyiBuilder {
         builder.section(id, title, children)
     }
 
-    pub fn solver(self, id: impl ToString, solver: Box<dyn Solver>) -> ShiyanyiBuilder {
+    pub fn solver(self, solver: Box<dyn Solver>) -> ShiyanyiBuilder {
         let builder = ShiyanyiBuilder {
             children: Vec::new(),
         };
-        builder.solver(id, solver)
+        builder.solver(solver)
     }
 
-    pub fn solver_default<S>(self, id: impl ToString) -> ShiyanyiBuilder
+    pub fn solver_default<S>(self) -> ShiyanyiBuilder
     where
         S: Solver + Default + 'static,
     {
-        self.solver(id, Box::new(S::default()))
+        self.solver(Box::new(S::default()))
     }
 }
 
@@ -71,8 +71,8 @@ impl ShiyanyiBuilder {
         self
     }
 
-    pub fn solver(mut self, id: impl ToString, solver: Box<dyn Solver>) -> Self {
-        let id = id.to_string();
+    pub fn solver(mut self, solver: Box<dyn Solver>) -> Self {
+        let id = solver.id();
         if id.contains(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_')) {
             panic!("id is not url safe: {}", id);
         }
@@ -84,11 +84,11 @@ impl ShiyanyiBuilder {
         self
     }
 
-    pub fn solver_default<S>(self, id: impl ToString) -> ShiyanyiBuilder
+    pub fn solver_default<S>(self) -> ShiyanyiBuilder
     where
         S: Solver + Default + 'static,
     {
-        self.solver(id, Box::new(S::default()))
+        self.solver(Box::new(S::default()))
     }
 
     // TODO: pub fn alias(mut self, title: String, target: String) -> Self
@@ -174,12 +174,14 @@ type SolverObject = Rc<Box<dyn Solver>>;
 
 /// All methods must be pure functional (return identical results for identical arguments).
 pub trait Solver {
-    /// Title shown in table of contents (side bar), will be calculated only once while booting.
+    fn id(&self) -> String;
+    /// Title shown in table of contents (side bar).
     fn toc_title(&self) -> String {
         self.title()
     }
     /// Title shown in the main section.
     fn title(&self) -> String;
+    fn description(&self) -> View;
     fn default_input(&self) -> String;
     fn solve(&self, input: String) -> View;
 }
@@ -309,12 +311,13 @@ fn Contents(
         }
         ol.root {
             min-width: 12rem;
+            max-width: 24rem;
         }
         ol.section {
             border-left: 1px solid rgb(205, 233, 255);
         }
         summary {
-            padding: 0.5rem 1rem 0.5rem 0;
+            padding: 0.7rem 1rem 0.7rem 0;
             font-weight: 700;
             cursor: pointer;
         }
@@ -324,7 +327,7 @@ fn Contents(
             margin-left: 1.5rem;
         }
         li.solver {
-            padding: 0.5rem 1.5rem 0.5rem 1.5rem;
+            padding: 0.7rem 1.5rem 0.7rem 1.5rem;
         }
         li.solver:hover {
             text-decoration: underline;
@@ -334,8 +337,9 @@ fn Contents(
             background-color: rgb(205, 233, 255);
         }
         @media only screen and (max-width: 1024px) {
-            details.header {
-                padding-bottom: 0.5rem;
+            ol.root {
+                min-width: revert;
+                max-width: revert;
             }
             details.header > summary {
                 list-style: revert;
@@ -345,7 +349,7 @@ fn Contents(
                 margin-left: 2.5rem;
             }
             li.solver {
-                padding: 0.5rem 0 0.5rem 2.5rem;
+                padding: 0.7rem 2.5rem 0.7rem 2.5rem;
             }
         }
     };
@@ -491,7 +495,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             font-weight: 900;
             line-height: 2.5rem;
         }
-        .input-section {
+        .section {
             display: flex;
             padding: 2.5rem 2.5rem 3rem 2.5rem;
             flex-direction: column;
@@ -502,22 +506,27 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             background-color: rgb(255, 255, 255);
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-        .input-section > h2{
+        .section > h2{
             margin-bottom: 1rem;
             font-size: 1.5rem;
             line-height: 2rem;
             font-weight: 700;
         }
-        .input-section > textarea {
+        .description > div {
+            margin-left: 2rem;
+            margin-right: 2rem;
+            overflow: auto visible;
+        }
+        .input > textarea {
             padding: 0.5rem;
             margin-left: 2rem;
             margin-right: 2rem;
             border-radius: 0.25rem;
             border: 2px solid rgb(229, 231, 235);
             font-family: "DejaVu Sans Mono", ui-monospace, monospace;
-            height: 12rem;
+            min-height: 12rem;
         }
-        .input-section > button {
+        .input > button {
             padding: 0.6rem 2.5rem;
             margin-left: 2rem;
             margin-right: 2rem;
@@ -529,34 +538,19 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             color: rgb(255, 255, 255);
             background-color: rgb(125, 196, 255);
         }
-        .input-section > button:hover {
+        .input > button:hover {
             background-color: rgb(72, 158, 229);
         }
-        .input-section > button:active {
+        .input > button:active {
             background-color: rgb(112, 175, 229);
         }
-        .answer-section {
+        .answer {
             flex: 1;
-            display: flex;
-            padding: 2.5rem 2.5rem 2rem 2.5rem;
-            flex-direction: column;
-            gap: 1rem;
-            justify-content: flex-start;
-            align-items: stretch;
-            border-radius: 0.75rem;
-            background-color: rgb(255, 255, 255);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-        .answer-section > h2 {
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-            line-height: 2rem;
-            font-weight: 700;
-        }
-        .answer-section > div {
+        .answer > div {
             margin-left: 2rem;
             margin-right: 2rem;
-            overflow-x: auto;
+            overflow: auto visible;
             min-height: 6rem;
         }
         @media only screen and (max-width: 1024px) {
@@ -568,23 +562,23 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
                 font-size: 1.5rem;
                 line-height: 2rem;
             }
-            .input-section {
+            .section {
                 padding: 0.75rem 1rem 1rem 1rem;
                 border-radius: 0.5rem;
                 gap: 0.7rem;
             }
-            .input-section > h2{
+            .section > h2{
                 margin-bottom: 0rem;
                 margin-left: 0rem;
                 margin-right: 0rem;
                 font-size: 1rem;
                 line-height: 1.5rem;
             }
-            .input-section > textarea {
+            .input > textarea {
                 margin-left: 0;
                 margin-right: 0;
             }
-            .input-section > button {
+            .input > button {
                 padding: 0.5rem 0rem;
                 margin-left: 0;
                 margin-right: 0;
@@ -592,19 +586,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
                 width: auto;
                 font-size: 1rem;
             }
-            .answer-section {
-                padding: 0.75rem 1rem 1rem 1rem;
-                border-radius: 0.5rem;
-                gap: 0.7rem;
-            }
-            .answer-section > h2{
-                margin-bottom: 0rem;
-                margin-left: 0rem;
-                margin-right: 0rem;
-                font-size: 1rem;
-                line-height: 1.5rem;
-            }
-            .answer-section > div {
+            .answer > div {
                 margin-left: 0;
                 margin-right: 0;
             }
@@ -669,8 +651,12 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
         >
             <div class="solver">
                 <h1 class="solver-title"> { move || with!(move |s| s.as_ref().unwrap().title()) } </h1>
-                <div class="input-section">
-                    <h2> "Input Section" </h2>
+                <div class="section description">
+                    <h2> "Description." </h2>
+                    <div> { move || with!(move |s| s.as_ref().unwrap().description()) } </div>
+                </div>
+                <div class="section input">
+                    <h2> "Input." </h2>
                     <textarea node_ref=input />
                     <button on:click=move |_| {
                         let input = match input.get_untracked() {
@@ -692,15 +678,17 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
                         set_answer(Some(answer));
                     }> "Submit" </button>
                 </div>
-                <div class="answer-section">
-                    <h2> {
-                        move || with!(|duration| match duration {
-                            Some(duration) => format!("Answer Section (took {}ms)", duration),
-                            None => "Answer Section".to_string()
-                        })
-                    } </h2>
-                    <div> { answer } </div>
-                </div>
+                <Show when=move || with!(|answer| answer.is_some())>
+                    <div class="section answer">
+                        <h2> {
+                            move || with!(|duration| match duration {
+                                Some(duration) => format!("Answer. (took {}ms)", duration),
+                                None => "Answer.".to_string()
+                            })
+                        } </h2>
+                        <div> { answer } </div>
+                    </div>
+                </Show>
             </div>
         </Show>
     }
