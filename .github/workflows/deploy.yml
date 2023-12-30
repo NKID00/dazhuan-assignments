@@ -13,13 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v3
-        id: cache
+        id: cargo
         with:
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
+          key: ${{ runner.os }}
+      - uses: actions/cache@v3
+        id: target
+        with:
+          path: |
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: dtolnay/rust-toolchain@nightly
