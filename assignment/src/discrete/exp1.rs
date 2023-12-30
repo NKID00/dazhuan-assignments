@@ -243,9 +243,7 @@ impl Solver for Exp1 {
     }
 
     fn description(&self) -> View {
-        view! {
-            <p> "输入命题公式." </p>
-        }.into_view()
+        "输入命题公式.".into_view()
     }
 
     fn default_input(&self) -> String {

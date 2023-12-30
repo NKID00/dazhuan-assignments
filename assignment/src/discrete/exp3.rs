@@ -6,7 +6,7 @@ use leptos::*;
 
 use leptos_meta::Style;
 use num::{BigInt, Zero};
-use shiyanyi::{KaTeX, Solver};
+use shiyanyi::{Solver, KaTeX};
 use stylers::style_str;
 
 use crate::common::Matrix;
@@ -54,10 +54,7 @@ impl Solver for Exp3 {
     }
 
     fn description(&self) -> View {
-        view! {
-            <p> "输入集合元素和关系矩阵." </p>
-        }
-        .into_view()
+        "输入集合元素和关系矩阵.".into_view()
     }
 
     fn default_input(&self) -> String {
@@ -77,35 +74,21 @@ impl Solver for Exp3 {
     fn solve(&self, input: String) -> View {
         let (set, matrix) = match input.split_once('\n') {
             Some(x) => x,
-            None => {
-                return view! {
-                    <p> "Failed to parse." </p>
-                }
-                .into_view()
-            }
+            None => return "Failed to parse.".into_view(),
         };
         let set = set.split_whitespace().collect_vec();
         let matrix = match matrix.parse::<Matrix<BigInt>>() {
             Ok(x) => x,
             Err(_) => {
-                return view! {
-                    <p> "Failed to parse." </p>
-                }
-                .into_view()
+                return "Failed to parse.".into_view()
             }
         };
         let (m, n) = matrix.shape();
         if m != n {
-            return view! {
-                <p> "Matrix is not square." </p>
-            }
-            .into_view();
+            return "Matrix is not square.".into_view();
         }
         if m != set.len() {
-            return view! {
-                <p> "Incorrect element set." </p>
-            }
-            .into_view();
+            return "Incorrect element set.".into_view();
         }
         let matrix = matrix.map(|x| !x.is_zero());
         let mut covering /* 盖住关系 */ = Vec::new();
@@ -151,6 +134,7 @@ impl Solver for Exp3 {
         } else {
             false
         };
+        let matrix = matrix.map(|x| if *x { "1" } else { "0" });
         let (class_name, style_val) = style_str! {
             tr {
                 border-top: 1px solid #333;
@@ -173,6 +157,10 @@ impl Solver for Exp3 {
         view! {
                 class = class_name,
                 <Style> {style_val} </Style>
+                <div class="mb-10">
+                    <p class="font-bold mb-2"> "关系矩阵" </p>
+                    <KaTeX expr={ format!(r"\begin{{bmatrix}} {} \end{{bmatrix}}", matrix) } />
+                </div>
                 <div class="mb-10">
                     <p class="font-bold mb-2"> "盖住关系" </p>
                     <p> { covering.iter().map(|(i, j)| format!("<{}, {}>", set[*i], set[*j])).join(", ") } </p>

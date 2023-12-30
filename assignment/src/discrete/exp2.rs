@@ -22,9 +22,7 @@ impl Solver for Exp2 {
     }
 
     fn description(&self) -> View {
-        view! {
-            <p> "输入关系矩阵." </p>
-        }.into_view()
+        "输入关系矩阵.".into_view()
     }
 
     fn default_input(&self) -> String {
