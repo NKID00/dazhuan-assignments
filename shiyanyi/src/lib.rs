@@ -8,6 +8,7 @@ use base64::prelude::*;
 use itertools::Itertools;
 use js_sys::{Object, Reflect};
 use leptos::*;
+use leptos_dom::helpers::*;
 use leptos_meta::*;
 use leptos_router::*;
 use stylers::style_str;
@@ -40,6 +41,13 @@ impl EmptyShiyanyiBuilder {
             children: Vec::new(),
         };
         builder.solver(id, solver)
+    }
+
+    pub fn solver_default<S>(self, id: impl ToString) -> ShiyanyiBuilder
+    where
+        S: Solver + Default + 'static,
+    {
+        self.solver(id, Box::new(S::default()))
     }
 }
 
@@ -74,6 +82,13 @@ impl ShiyanyiBuilder {
             solver: Rc::new(solver),
         });
         self
+    }
+
+    pub fn solver_default<S>(self, id: impl ToString) -> ShiyanyiBuilder
+    where
+        S: Solver + Default + 'static,
+    {
+        self.solver(id, Box::new(S::default()))
     }
 
     // TODO: pub fn alias(mut self, title: String, target: String) -> Self
@@ -189,9 +204,7 @@ fn set_location_hash_base64_encode(s: &str) {
 }
 
 fn get_location_hash_base64_decode() -> Option<String> {
-    document()
-        .location()
-        .and_then(|l| l.hash().ok())
+    location_hash()
         .and_then(|h| if h.is_empty() { None } else { Some(h) })
         .and_then(|h| {
             BASE64_URL_SAFE_NO_PAD
@@ -237,7 +250,21 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
             align-items: stretch;
         }
         @media only screen and (max-width: 1024px) {
-
+            .root {
+                flex-direction: column;
+                padding: 0 0 1rem 0;
+            }
+            nav {
+                align-self: stretch;
+                margin: 0;
+                padding: 0;
+                border-radius: 0;
+                box-shadow: none;
+                border-bottom: 2px solid rgb(229, 231, 235);
+            }
+            main {
+                padding: 0 1rem 0 1rem;
+            }
         }
     };
     let (map_path_solver, set_map_path_solver) = create_signal(HashMap::new());
@@ -267,9 +294,17 @@ fn Contents(
     set_map_path_solver: WriteSignal<HashMap<String, SolverObject>>,
 ) -> impl IntoView {
     let (class_name, style_val) = style_str! {
+        details.header > summary {
+            pointer-events: none;
+            padding-left: 1rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            list-style: none;
+        }
         ol {
             display: flex;
             flex-direction: column;
+            list-style: none;
         }
         ol.root {
             min-width: 12rem;
@@ -282,18 +317,13 @@ fn Contents(
             font-weight: 700;
             cursor: pointer;
         }
-        li.header {
-            padding: 0 0 0.5rem 1rem;
-            font-weight: 700;
-            font-size: 1.25rem;
-        }
         li.section {
             display: flex;
             flex-direction: column;
             margin-left: 1.5rem;
         }
         li.solver {
-            padding: 0.5rem 0 0.5rem 1.25rem;
+            padding: 0.5rem 1.5rem 0.5rem 1.5rem;
         }
         li.solver:hover {
             text-decoration: underline;
@@ -303,7 +333,19 @@ fn Contents(
             background-color: rgb(205, 233, 255);
         }
         @media only screen and (max-width: 1024px) {
-
+            details.header {
+                padding-bottom: 0.5rem;
+            }
+            details.header > summary {
+                list-style: revert;
+                pointer-events: revert;
+            }
+            li.section {
+                margin-left: 2.5rem;
+            }
+            li.solver {
+                padding: 0.5rem 0 0.5rem 2.5rem;
+            }
         }
     };
     let path_selected = use_location().pathname;
@@ -391,13 +433,29 @@ fn Contents(
             navigate(default_path.as_str(), Default::default());
         }
     });
+    let header = create_node_ref();
+    // TODO: media query callback
+    // let media = window()
+    //     .match_media("only screen and (max-width: 1024px)")
+    //     .unwrap()
+    //     .unwrap();
+    // let cb = Closure::wrap(Box::new(move |e: JsValue| -> () {
+    //     println!("{:?}", e);
+    //     header;
+    // }) as Box<dyn Fn(JsValue) -> ()>);
+    // media
+    //     .add_event_listener_with_callback("change", cb.as_ref().unchecked_ref())
+    //     .unwrap();
+    // cb.forget();
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        <ol class="root">
-            <li class="header"> Contents </li>
-            {contents}
-        </ol>
+        <details class="header" open="" _ref=header>
+            <summary> "Contents" </summary>
+            <ol class="root">
+                {contents}
+            </ol>
+        </details>
     }
 }
 
@@ -454,7 +512,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             margin-left: 2rem;
             margin-right: 2rem;
             border-radius: 0.25rem;
-            border-width: 2px;
+            border: 2px solid rgb(229, 231, 235);
             font-family: "DejaVu Sans Mono", ui-monospace, monospace;
             height: 12rem;
         }
@@ -502,10 +560,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
         }
         @media only screen and (max-width: 1024px) {
             .solver {
-                padding-left: 1.5%;
-                padding-right: 1.5%;
                 gap: 1rem;
-                padding-bottom: 1rem;
             }
             .solver-title {
                 margin-top: 1.5rem;
@@ -513,7 +568,7 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
                 line-height: 2rem;
             }
             .input-section {
-                padding: 0.5rem 1rem 1rem 1rem;
+                padding: 0.75rem 1rem 1rem 1rem;
                 border-radius: 0.5rem;
                 gap: 0.7rem;
             }
@@ -534,9 +589,10 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
                 margin-right: 0;
                 align-self: stretch;
                 width: auto;
+                font-size: 1rem;
             }
             .answer-section {
-                padding: 0.5rem 1rem 1rem 1rem;
+                padding: 0.75rem 1rem 1rem 1rem;
                 border-radius: 0.5rem;
                 gap: 0.7rem;
             }
@@ -599,7 +655,6 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             }
         }
     });
-
     view! {
         class = class_name,
         <Style> { style_val_not_found } </Style>

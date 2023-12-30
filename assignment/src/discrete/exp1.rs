@@ -1,7 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
     ops::Deref,
-    panic,
 };
 
 use itertools::Itertools;
@@ -14,10 +13,10 @@ use pest::{
 };
 use pest_derive::Parser;
 
-use shiyanyi::{KaTeX, Shiyanyi, Solver};
+use shiyanyi::{KaTeX, Solver};
 
 #[derive(Parser)]
-#[grammar = "propositional_formula.pest"]
+#[grammar = "discrete/propositional_formula.pest"]
 struct PropositionalFormulaParser;
 
 #[derive(Debug, Clone)]
@@ -232,17 +231,15 @@ impl<'a> Deref for TruthTable<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct DiscreteMathematicsExp1 {
-    title: String,
-}
+pub struct Exp1;
 
-impl Solver for DiscreteMathematicsExp1 {
+impl Solver for Exp1 {
     fn title(&self) -> String {
-        self.title.clone()
+        "利用真值表求主析取范式和主合取范式".to_string()
     }
 
     fn default_input(&self) -> String {
-        format!("((P ∧ (T → Q)) → ¬(R ⇄ Q)) ∧ ¬S ∧ {}", self.title)
+        "((P ∧ (T → Q)) → ¬(R ⇄ Q)) ∧ ¬S".to_string()
     }
 
     fn solve(&self, input: String) -> View {
@@ -261,15 +258,7 @@ impl Solver for DiscreteMathematicsExp1 {
         let truth_table = expr.truth_table();
         view! {
             <div class="mb-10">
-                <p class="font-bold mb-2"> "Conjunctive normal form" </p>
-                <KaTeX expr={ truth_table.conjunctive_normal_form() } />
-            </div>
-            <div class="mb-10">
-                <p class="font-bold mb-2"> "Disjunctive normal form" </p>
-                <KaTeX expr={ truth_table.disjunctive_normal_form() } />
-            </div>
-            <div class="mb-10">
-                <p class="font-bold mb-2"> "Truth table" </p>
+                <p class="font-bold mb-2"> "真值表" </p>
                 <table class="truth-table">
                     <thead>
                         <tr>
@@ -295,79 +284,21 @@ impl Solver for DiscreteMathematicsExp1 {
                     } </tbody>
                 </table>
             </div>
+            <div class="mb-10">
+                <p class="font-bold mb-2"> "主析取范式" </p>
+                <KaTeX expr={ truth_table.disjunctive_normal_form() } />
+            </div>
+            <div class="mb-10">
+                <p class="font-bold mb-2"> "主合取范式" </p>
+                <KaTeX expr={ truth_table.conjunctive_normal_form() } />
+            </div>
         }
         .into_view()
     }
 }
 
-impl Default for DiscreteMathematicsExp1 {
+impl Default for Exp1 {
     fn default() -> Self {
-        Self {
-            title: "DiscreteMathematicsExp1".to_string(),
-        }
+        Self
     }
-}
-
-fn main() {
-    panic::set_hook(Box::new(console_error_panic_hook::hook));
-    Shiyanyi::builder()
-        .solver(
-            "exp1".to_string(),
-            Box::new(DiscreteMathematicsExp1 {
-                title: "exp1".to_string(),
-            }),
-        )
-        .section(
-            "discrete1".to_string(),
-            "Discrete1".to_string(),
-            Shiyanyi::builder()
-                .solver(
-                    "exp2".to_string(),
-                    Box::new(DiscreteMathematicsExp1 {
-                        title: "exp2".to_string(),
-                    }),
-                )
-                .solver(
-                    "exp3".to_string(),
-                    Box::new(DiscreteMathematicsExp1 {
-                        title: "exp3".to_string(),
-                    }),
-                )
-                .section(
-                    "discrete1".to_string(),
-                    "Discrete1".to_string(),
-                    Shiyanyi::builder()
-                        .solver(
-                            "exp4".to_string(),
-                            Box::new(DiscreteMathematicsExp1 {
-                                title: "exp4".to_string(),
-                            }),
-                        )
-                        .solver(
-                            "exp5".to_string(),
-                            Box::new(DiscreteMathematicsExp1 {
-                                title: "exp5".to_string(),
-                            }),
-                        ),
-                ),
-        )
-        .section(
-            "discrete2".to_string(),
-            "Discrete2".to_string(),
-            Shiyanyi::builder()
-                .solver(
-                    "exp6".to_string(),
-                    Box::new(DiscreteMathematicsExp1 {
-                        title: "exp6".to_string(),
-                    }),
-                )
-                .solver(
-                    "exp7".to_string(),
-                    Box::new(DiscreteMathematicsExp1 {
-                        title: "exp7".to_string(),
-                    }),
-                ),
-        )
-        .build()
-        .boot("shiyanyi");
 }

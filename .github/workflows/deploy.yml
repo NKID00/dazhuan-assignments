@@ -29,11 +29,11 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Build
         run: |
-          cd assignment/discrete/exp1
+          cd assignment
           trunk build --release
       - uses: actions/upload-artifact@v3
         with:
-          path: assignment/discrete/exp1/dist/
+          path: assignment/dist/
   deploy:
     needs: build
     runs-on: ubuntu-latest

@@ -1628,6 +1628,7 @@ dependencies = [
  "itertools 0.12.0",
  "js-sys",
  "leptos",
+ "leptos_dom",
  "leptos_meta",
  "leptos_router",
  "stylers",
