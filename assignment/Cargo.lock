@@ -334,6 +334,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "dazhuan-assignments"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "eyre",
+ "indoc",
+ "itertools 0.12.0",
+ "leptos",
+ "leptos_meta",
+ "num",
+ "pest",
+ "pest_derive",
+ "rand",
+ "rand_chacha",
+ "shiyanyi",
+ "stylers",
+]
+
+[[package]]
 name = "derive-where"
 version = "1.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -380,25 +399,6 @@ name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
-
-[[package]]
-name = "exp1"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "eyre",
- "indoc",
- "itertools 0.12.0",
- "leptos",
- "leptos_meta",
- "num",
- "pest",
- "pest_derive",
- "rand",
- "rand_chacha",
- "shiyanyi",
- "stylers",
-]
 
 [[package]]
 name = "eyre"
