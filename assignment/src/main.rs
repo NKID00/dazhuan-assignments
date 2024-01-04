@@ -12,7 +12,9 @@ fn main() {
         .section(
             "linalg",
             "线性代数",
-            Shiyanyi::builder().solver_default::<linalg::InversionNumber>(),
+            Shiyanyi::builder()
+                .solver_default::<linalg::InversionNumber>()
+                .solver_default::<linalg::ReducedRowEchelon>(),
         )
         .section(
             "discrete",

@@ -85,7 +85,7 @@ where
                 .iter()
                 .map(|v| v.iter().map(|n| n.to_string()).collect())
                 .collect();
-            let result = m.iter().map(|v| v.join(" & ")).join(r" \\ ");
+            let result = m.iter().map(|v| v.join(" & ")).join(r" \\[1ex] ");
             write!(f, "{result}")?;
         }
         Ok(())
