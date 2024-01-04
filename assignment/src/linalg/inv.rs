@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use leptos::*;
-use num::{zero, BigInt, Integer, bigint::ToBigInt as _};
+use num::{bigint::ToBigInt as _, zero, BigInt, Integer};
 use shiyanyi::*;
 
 fn inv(numbers: &[BigInt]) -> BigInt {
@@ -52,11 +52,11 @@ fn test_inv() {
 }
 
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct InversionNumber;
+pub struct InversionNumberSolver;
 
-impl Solver for InversionNumber {
+impl Solver for InversionNumberSolver {
     fn id(&self) -> String {
-        "inversion-number".to_string()
+        "inv".to_string()
     }
 
     fn title(&self) -> String {
@@ -64,7 +64,7 @@ impl Solver for InversionNumber {
     }
 
     fn description(&self) -> View {
-        "输入整数序列.".into_view()
+        "输入整数排列.".into_view()
     }
 
     fn default_input(&self) -> String {
@@ -90,11 +90,11 @@ impl Solver for InversionNumber {
         view! {
             <div class="mb-10">
                 <p class="font-bold mb-2"> "逆序数" </p>
-                <KaTeX expr={ format!(r"\tau({numbers}) = {inversion_number} ") } />
+                <KaTeX expr={ format!(r"\tau({numbers}) = {inversion_number}.") } />
             </div>
             <div class="mb-10">
-                <p class="font-bold mb-2"> "序列类型" </p>
-                <p> { if inversion_number.is_odd() { "奇序列" } else { "偶序列" }} </p>
+                <p class="font-bold mb-2"> "排列类型" </p>
+                <p> { if inversion_number.is_odd() { "奇排列." } else { "偶排列." }} </p>
             </div>
         }
         .into_view()

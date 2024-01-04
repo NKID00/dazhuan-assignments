@@ -13,8 +13,9 @@ fn main() {
             "linalg",
             "线性代数",
             Shiyanyi::builder()
-                .solver_default::<linalg::InversionNumber>()
-                .solver_default::<linalg::ReducedRowEchelon>(),
+                .solver_default::<linalg::InversionNumberSolver>()
+                .solver_default::<linalg::ReducedRowEchelonFormSolver>()
+                .solver_default::<linalg::LinearEquationsSolver>(),
         )
         .section(
             "discrete",

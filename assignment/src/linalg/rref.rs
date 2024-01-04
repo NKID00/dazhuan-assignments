@@ -1,67 +1,12 @@
-use std::{
-    fmt::Display,
-    ops::{AddAssign, Mul, MulAssign},
-};
+use std::ops::{AddAssign, Mul, MulAssign};
 
 use indoc::*;
 use itertools::Itertools;
 use leptos::*;
-use num::{
-    traits::{NumAssignRef, NumRef},
-    BigRational, One, Signed, Zero,
-};
+use num::{BigRational, One, Zero};
 use shiyanyi::*;
 
-use crate::common::Matrix;
-
-fn big_rational_to_string(x: &BigRational) -> String {
-    if x.is_integer() {
-        x.to_string()
-    } else {
-        format!(
-            r"{}\frac{{{}}}{{{}}}",
-            if x.is_negative() { "-" } else { "" },
-            x.numer().abs(),
-            x.denom()
-        )
-    }
-}
-
-fn big_rational_to_string_with_sign(x: &BigRational) -> String {
-    if x.is_integer() {
-        format!(
-            r"{}{}",
-            if x.is_negative() { "" } else { "+" },
-            x.to_string()
-        )
-    } else {
-        format!(
-            r"{}\frac{{{}}}{{{}}}",
-            if x.is_negative() { "-" } else { "+" },
-            x.numer().abs(),
-            x.denom()
-        )
-    }
-}
-
-fn big_rational_to_string_with_paren(x: &BigRational) -> String {
-    if x.is_integer() {
-        format!(
-            r"{}{}{}",
-            if x.is_negative() { r"\left(" } else { "" },
-            x.to_string(),
-            if x.is_negative() { r"\right)" } else { "" },
-        )
-    } else {
-        format!(
-            r"{}\frac{{{}}}{{{}}}{}",
-            if x.is_negative() { r"\left(-" } else { "" },
-            x.numer().abs(),
-            x.denom(),
-            if x.is_negative() { r"\right)" } else { "" },
-        )
-    }
-}
+use crate::common::*;
 
 pub trait SwapRow {
     /// row1 <-> row2
@@ -117,10 +62,7 @@ impl ScaleAddRow for Matrix<BigRational> {
 
 fn reduced_row_echelon_form_with_steps(
     matrix: &Matrix<BigRational>,
-) -> Vec<(String, Matrix<BigRational>)>
-where
-    BigRational: NumRef + NumAssignRef + Display + Clone,
-{
+) -> Vec<(String, Matrix<BigRational>)> {
     let mut matrix = matrix.clone();
     let mut steps = Vec::new();
     let mut target_row = 0;
@@ -153,7 +95,7 @@ where
                 format!(
                     r"r_{{{}}} \times {}",
                     target_row + 1,
-                    big_rational_to_string_with_paren(&mul_inv)
+                    mul_inv.to_tex_with_paren()
                 ),
                 matrix.clone(),
             ));
@@ -163,21 +105,12 @@ where
                 let factor = -matrix[i][j].clone();
                 matrix.scale_add_row(target_row, &factor, i);
                 steps.push((
-                    if factor.abs().is_one() {
-                        format!(
-                            r"r_{{{}}} {} r_{{{}}}",
-                            i + 1,
-                            if factor.is_positive() { "+" } else { "-" },
-                            target_row + 1
-                        )
-                    } else {
-                        format!(
-                            r"r_{{{}}} {} r_{{{}}}",
-                            i + 1,
-                            big_rational_to_string_with_sign(&factor),
-                            target_row + 1
-                        )
-                    },
+                    format!(
+                        r"r_{{{}}} {} r_{{{}}}",
+                        i + 1,
+                        factor.to_tex_with_sign_ignore_one(),
+                        target_row + 1
+                    ),
                     matrix.clone(),
                 ));
             }
@@ -191,10 +124,7 @@ pub trait ReducedRowEchelonForm {
     fn reduced_row_echelon_form(&self) -> Self;
 }
 
-impl ReducedRowEchelonForm for Matrix<BigRational>
-where
-    BigRational: NumRef + NumAssignRef + Display + Clone,
-{
+impl ReducedRowEchelonForm for Matrix<BigRational> {
     fn reduced_row_echelon_form(&self) -> Self {
         match reduced_row_echelon_form_with_steps(&self).pop() {
             Some((_, matrix)) => matrix,
@@ -203,12 +133,25 @@ where
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq)]
-pub struct ReducedRowEchelon;
+pub trait Rank {
+    fn rank(&self) -> usize;
+}
 
-impl Solver for ReducedRowEchelon {
+impl Rank for Matrix<BigRational> {
+    fn rank(&self) -> usize {
+        self.reduced_row_echelon_form()
+            .iter()
+            .filter(|r| !r.iter().all(|v| v.is_zero()))
+            .count()
+    }
+}
+
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct ReducedRowEchelonFormSolver;
+
+impl Solver for ReducedRowEchelonFormSolver {
     fn id(&self) -> String {
-        "reduced-row-echelon".to_string()
+        "rref".to_string()
     }
 
     fn title(&self) -> String {
@@ -221,9 +164,9 @@ impl Solver for ReducedRowEchelon {
 
     fn default_input(&self) -> String {
         indoc! {"
-            1  3  1    3
-            1  1 -1  1/3
-            3 11  5 35/3
+            1   3  -2   5
+            3   5   6   7
+            1/2 1 1/2 3/2
         "}
         .to_string()
     }
@@ -241,16 +184,44 @@ impl Solver for ReducedRowEchelon {
         let steps = reduced_row_echelon_form_with_steps(&matrix);
         if steps.is_empty() {
             view! {
-                <KaTeX expr={ format!(r"\begin{{pmatrix}}{}\end{{pmatrix}} \text{{已是行最简形矩阵.}}", matrix.map(big_rational_to_string)) } />
+                <KaTeX expr={ format!(r"\begin{{pmatrix}}{}\end{{pmatrix}} \text{{已是行最简形矩阵.}}", matrix.map(BigRational::to_tex)) } />
             }.into_view()
         } else {
+            let rref = steps.last().unwrap().1.clone();
+            let rank = rref.rank();
+            let rref = rref.to_tex();
+            let matrix = matrix.to_tex();
+            let steps = format!(
+                r"\begin{{align*}} \begin{{pmatrix}}{}\end{{pmatrix}} {} \end{{align*}}",
+                matrix,
+                steps
+                    .into_iter()
+                    .map(|(step, result)| {
+                        format!(
+                            r"{}{step}{}{}{}",
+                            r"& \begin{CD}\\@>{",
+                            r"}>>\\\end{CD} \begin{pmatrix}",
+                            result.map(BigRational::to_tex),
+                            r"\end{pmatrix}"
+                        )
+                    })
+                    .join(r" \\[3em] ")
+            );
             view! {
-                <KaTeX display_mode=true fleqn=true expr={
-                    format!(r"\begin{{align*}} \begin{{pmatrix}}{}\end{{pmatrix}} \  {} \end{{align*}}", matrix.map(big_rational_to_string), steps.into_iter().map(|(step, result)| {
-                        format!(r"& \begin{{CD}}\\@>{{{step}}}>>\\\end{{CD}} \begin{{pmatrix}}{}\end{{pmatrix}}", result.map(big_rational_to_string))
-                    }).join(r" \\[3em] "))
-                } />
-            }.into_view()
+                <div class="mb-10">
+                    <p class="font-bold mb-2"> "行最简形矩阵" </p>
+                    <KaTeX expr={ format!(r"\begin{{pmatrix}}{}\end{{pmatrix}}", rref) } />
+                </div>
+                <div class="mb-10">
+                    <p class="font-bold mb-2"> "矩阵的秩" </p>
+                    <KaTeX expr={ format!(r"\mathrm{{r}}\begin{{pmatrix}}{}\end{{pmatrix}} = {}", matrix, rank) } />
+                </div>
+                <div class="mb-10">
+                    <p class="font-bold mb-2"> "初等行变换过程" </p>
+                    <KaTeX display_mode=true fleqn=true expr={ steps } />
+                </div>
+            }
+            .into_view()
         }
     }
 }
