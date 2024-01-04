@@ -1,16 +1,15 @@
 use itertools::{repeat_n, Itertools};
 use leptos::*;
-
 use leptos_meta::Style;
 use num::Integer;
 use rand::prelude::*;
 use rand_chacha::ChaCha12Rng;
-use shiyanyi::{KaTeX, Solver};
+use shiyanyi::*;
 use stylers::style_str;
 
 use crate::common::Matrix;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Exp4;
 
 fn dfs1(matrix: &Matrix<bool>, current: usize, visited: &mut Vec<bool>) {
@@ -221,11 +220,5 @@ impl Solver for Exp4 {
             }
         }
         .into_view()
-    }
-}
-
-impl Default for Exp4 {
-    fn default() -> Self {
-        Self
     }
 }

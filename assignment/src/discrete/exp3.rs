@@ -3,15 +3,14 @@ use std::collections::HashMap;
 use indoc::*;
 use itertools::Itertools;
 use leptos::*;
-
 use leptos_meta::Style;
 use num::{BigInt, Zero};
-use shiyanyi::{Solver, KaTeX};
+use shiyanyi::*;
 use stylers::style_str;
 
 use crate::common::Matrix;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Exp3;
 
 fn least_upper_bound(matrix: &Matrix<bool>, a: usize, b: usize) -> Option<usize> {
@@ -79,9 +78,7 @@ impl Solver for Exp3 {
         let set = set.split_whitespace().collect_vec();
         let matrix = match matrix.parse::<Matrix<BigInt>>() {
             Ok(x) => x,
-            Err(_) => {
-                return "Failed to parse.".into_view()
-            }
+            Err(_) => return "Failed to parse.".into_view(),
         };
         let (m, n) = matrix.shape();
         if m != n {
@@ -182,11 +179,5 @@ impl Solver for Exp3 {
                 </div>
             }
             .into_view()
-    }
-}
-
-impl Default for Exp3 {
-    fn default() -> Self {
-        Self
     }
 }

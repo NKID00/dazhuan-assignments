@@ -12,8 +12,7 @@ use pest::{
     Parser,
 };
 use pest_derive::Parser;
-
-use shiyanyi::{KaTeX, Solver};
+use shiyanyi::*;
 
 #[derive(Parser)]
 #[grammar = "discrete/propositional_formula.pest"]
@@ -230,7 +229,7 @@ impl<'a> Deref for TruthTable<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Exp1;
 
 impl Solver for Exp1 {
@@ -302,11 +301,5 @@ impl Solver for Exp1 {
             </div>
         }
         .into_view()
-    }
-}
-
-impl Default for Exp1 {
-    fn default() -> Self {
-        Self
     }
 }
