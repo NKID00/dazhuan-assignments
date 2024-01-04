@@ -1,9 +1,7 @@
 use itertools::Itertools;
 use leptos::*;
-use leptos_meta::Style;
-use num::{bigint::ToBigInt as _, zero, BigInt, Integer};
+use num::{zero, BigInt, Integer, bigint::ToBigInt as _};
 use shiyanyi::*;
-use stylers::style_str;
 
 fn inv(numbers: &[BigInt]) -> BigInt {
     let l = numbers.len();
@@ -89,13 +87,10 @@ impl Solver for InversionNumber {
         }
         let inversion_number = inv(&numbers[..]);
         let numbers = numbers.into_iter().join(r" \allowbreak\  ");
-        let (class_name, style_val) = style_str! {};
         view! {
-            class = class_name,
-            <Style> {style_val} </Style>
             <div class="mb-10">
                 <p class="font-bold mb-2"> "逆序数" </p>
-                <KaTeX expr={ format!(r"\tau\left( {} \right) = {} ", numbers, inversion_number) } />
+                <KaTeX expr={ format!(r"\tau({numbers}) = {inversion_number} ") } />
             </div>
             <div class="mb-10">
                 <p class="font-bold mb-2"> "序列类型" </p>
