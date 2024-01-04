@@ -10,7 +10,7 @@ use eyre::eyre;
 use itertools::Itertools;
 use num::{BigRational, One, Signed};
 
-pub use crate::linalg::{ReducedRowEchelonForm, ScaleAddRow, ScaleRow, SwapRow};
+pub use crate::linalg::ReducedRowEchelonForm;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix<T>(pub Vec<Vec<T>>);
@@ -29,14 +29,6 @@ impl<T> Matrix<T> {
                 .map(|v| v.iter().map(&f).collect_vec())
                 .collect_vec(),
         )
-    }
-
-    pub fn from_row_vec(v: Vec<T>) -> Self {
-        Self(vec![v])
-    }
-
-    pub fn from_col_vec(v: Vec<T>) -> Self {
-        Self(v.into_iter().map(|x| vec![x]).collect_vec())
     }
 }
 

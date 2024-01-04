@@ -15,15 +15,15 @@ use crate::common::*;
 use super::Rank;
 
 #[derive(Debug, Clone, PartialEq)]
-struct LinearEquations(Matrix<BigRational>);
+pub struct LinearEquations(pub Matrix<BigRational>);
 
 impl LinearEquations {
-    fn is_homogeneous(&self) -> bool {
+    pub fn is_homogeneous(&self) -> bool {
         let (_, n) = self.shape();
         self.iter().all(|r| r[n - 1].is_zero())
     }
 
-    fn has_any_solution(&self) -> bool {
+    pub fn has_any_solution(&self) -> bool {
         Matrix::<BigRational>(
             self.iter()
                 .map(|r| r[0..r.len() - 1].to_vec())
@@ -33,7 +33,7 @@ impl LinearEquations {
             == self.rank()
     }
 
-    fn has_infinite_solutions(&self) -> bool {
+    pub fn has_infinite_solutions(&self) -> bool {
         self.rank() < self.shape().1 - 1
     }
 }

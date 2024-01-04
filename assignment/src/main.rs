@@ -15,7 +15,8 @@ fn main() {
             Shiyanyi::builder()
                 .solver_default::<linalg::InversionNumberSolver>()
                 .solver_default::<linalg::ReducedRowEchelonFormSolver>()
-                .solver_default::<linalg::LinearEquationsSolver>(),
+                .solver_default::<linalg::LinearEquationsSolver>()
+                .solver_default::<linalg::MaximalLinearlyIndependentSolver>(),
         )
         .section(
             "discrete",
