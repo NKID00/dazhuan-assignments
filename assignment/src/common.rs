@@ -8,6 +8,9 @@ use std::{
 
 use eyre::eyre;
 use itertools::Itertools;
+use num::{BigRational, One, Signed};
+
+pub use crate::linalg::{ReducedRowEchelonForm, ScaleAddRow, ScaleRow, SwapRow};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix<T>(pub Vec<Vec<T>>);
@@ -26,6 +29,14 @@ impl<T> Matrix<T> {
                 .map(|v| v.iter().map(&f).collect_vec())
                 .collect_vec(),
         )
+    }
+
+    pub fn from_row_vec(v: Vec<T>) -> Self {
+        Self(vec![v])
+    }
+
+    pub fn from_col_vec(v: Vec<T>) -> Self {
+        Self(v.into_iter().map(|x| vec![x]).collect_vec())
     }
 }
 
@@ -79,15 +90,167 @@ where
     T: Display,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if !self.0.is_empty() {
-            let m: Vec<Vec<String>> = self
-                .0
-                .iter()
-                .map(|v| v.iter().map(|n| n.to_string()).collect())
-                .collect();
-            let result = m.iter().map(|v| v.join(" & ")).join(r" \\[1ex] ");
-            write!(f, "{result}")?;
+        if !self.is_empty() {
+            write!(
+                f,
+                "{}",
+                self.iter()
+                    .map(|v| v.iter().map(|n| n.to_string()).join(" & "))
+                    .join(r" \\[1ex] ")
+            )?;
         }
         Ok(())
+    }
+}
+
+pub trait ToTex {
+    fn to_tex(&self) -> String;
+    fn to_tex_with_positive_sign(&self) -> String;
+    fn to_tex_with_paren(&self) -> String;
+    fn to_tex_ignore_one(&self) -> String;
+    fn to_tex_with_sign_ignore_one(&self) -> String;
+    fn sign_to_tex(&self) -> String;
+    fn sign_to_tex_with_positive_sign(&self) -> String;
+}
+
+impl ToTex for BigRational {
+    fn to_tex(&self) -> String {
+        if self.is_integer() {
+            self.to_string()
+        } else {
+            format!(
+                r"{}\frac{{{}}}{{{}}}",
+                if self.is_negative() { "-" } else { "" },
+                self.numer().abs(),
+                self.denom()
+            )
+        }
+    }
+
+    fn to_tex_with_positive_sign(&self) -> String {
+        if self.is_integer() {
+            format!(
+                r"{}{}",
+                if self.is_negative() { "" } else { "+" },
+                self.to_string()
+            )
+        } else {
+            format!(
+                r"{}\frac{{{}}}{{{}}}",
+                if self.is_negative() { "-" } else { "+" },
+                self.numer().abs(),
+                self.denom()
+            )
+        }
+    }
+
+    fn to_tex_with_paren(&self) -> String {
+        if self.is_integer() {
+            format!(
+                r"{}{}{}",
+                if self.is_negative() { r"\left(" } else { "" },
+                self.to_string(),
+                if self.is_negative() { r"\right)" } else { "" },
+            )
+        } else {
+            format!(
+                r"{}\frac{{{}}}{{{}}}{}",
+                if self.is_negative() { r"\left(-" } else { "" },
+                self.numer().abs(),
+                self.denom(),
+                if self.is_negative() { r"\right)" } else { "" },
+            )
+        }
+    }
+
+    fn to_tex_ignore_one(&self) -> String {
+        if self.is_integer() {
+            if self.is_one() {
+                "".to_string()
+            } else if self.abs().is_one() {
+                "-".to_string()
+            } else {
+                self.to_string()
+            }
+        } else {
+            format!(
+                r"{}\frac{{{}}}{{{}}}",
+                if self.is_negative() { "-" } else { "" },
+                self.numer().abs(),
+                self.denom()
+            )
+        }
+    }
+
+    fn to_tex_with_sign_ignore_one(&self) -> String {
+        if self.is_integer() {
+            if self.is_one() {
+                "+".to_string()
+            } else if self.abs().is_one() {
+                "-".to_string()
+            } else {
+                format!(
+                    r"{}{}",
+                    if self.is_negative() { "" } else { "+" },
+                    self.to_string()
+                )
+            }
+        } else {
+            format!(
+                r"{}\frac{{{}}}{{{}}}",
+                if self.is_negative() { "-" } else { "+" },
+                self.numer().abs(),
+                self.denom()
+            )
+        }
+    }
+
+    fn sign_to_tex(&self) -> String {
+        if self.is_positive() {
+            "".to_string()
+        } else {
+            "-".to_string()
+        }
+    }
+
+    fn sign_to_tex_with_positive_sign(&self) -> String {
+        if self.is_positive() {
+            "+".to_string()
+        } else {
+            "-".to_string()
+        }
+    }
+}
+
+impl<T> ToTex for Matrix<T>
+where
+    T: ToTex,
+{
+    fn to_tex(&self) -> String {
+        self.map(T::to_tex).to_string()
+    }
+
+    fn to_tex_with_positive_sign(&self) -> String {
+        self.map(T::to_tex_with_positive_sign).to_string()
+    }
+
+    fn to_tex_with_paren(&self) -> String {
+        self.map(T::to_tex_with_paren).to_string()
+    }
+
+    fn to_tex_ignore_one(&self) -> String {
+        self.map(T::to_tex_ignore_one).to_string()
+    }
+
+    fn to_tex_with_sign_ignore_one(&self) -> String {
+        self.map(T::to_tex_with_sign_ignore_one).to_string()
+    }
+
+    fn sign_to_tex(&self) -> String {
+        self.map(T::sign_to_tex).to_string()
+    }
+
+    fn sign_to_tex_with_positive_sign(&self) -> String {
+        self.map(T::sign_to_tex_with_positive_sign).to_string()
     }
 }
