@@ -731,16 +731,7 @@ pub fn KaTeX(
     Reflect::set(&options, &"leqno".into(), &leqno.into()).unwrap();
     Reflect::set(&options, &"fleqn".into(), &fleqn.into()).unwrap();
     Reflect::set(&options, &"throwOnError".into(), &throw_on_error.into()).unwrap();
-    let (class_name, style_val) = style_str! {
-        div :deep(.katex .base) {
-            white-space: normal;
-            width: fit-content;
-            display: inline;
-        }
-    };
     view! {
-        class = class_name,
-        <Style> { style_val } </Style>
         <div inner_html={ katex_render_to_string(expr.as_str(), options.as_ref()) }></div>
     }
 }
