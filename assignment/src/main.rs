@@ -3,12 +3,20 @@ use std::panic;
 use shiyanyi::Shiyanyi;
 
 mod common;
-mod discrete;
+mod comp;
 mod linalg;
+mod discrete;
 
 fn main() {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     Shiyanyi::builder()
+        .section(
+            "comp",
+            "编译原理",
+            Shiyanyi::builder()
+                .solver_default::<comp::LexerSolver>()
+                .solver_default::<comp::ParserSolver>()
+        )
         .section(
             "linalg",
             "线性代数",
