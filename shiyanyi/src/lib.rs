@@ -235,6 +235,7 @@ fn get_location_hash_decoded() -> Option<String> {
 #[component]
 fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     provide_meta_context();
+    let (map_path_solver, set_map_path_solver) = create_signal(HashMap::new());
     let (class_name, style_val) = style_str! {
         :deep(#shiyanyi) {
             flex: 1;
@@ -287,7 +288,6 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
             }
         }
     };
-    let (map_path_solver, set_map_path_solver) = create_signal(HashMap::new());
     view! {
         class = class_name,
         <Style> { style_val } </Style>
@@ -313,6 +313,15 @@ fn Contents(
     solver_tree: Vec<SectionOrSolver>,
     set_map_path_solver: WriteSignal<HashMap<String, SolverObject>>,
 ) -> impl IntoView {
+    let path_selected = use_location().pathname;
+    let path_selected =
+        Signal::derive(move || with!(|path_selected| path_selected[1..].to_string()));
+    // convert tree of solver into contents
+    let mut stack_solver_tree = vec![VecDeque::from(solver_tree)];
+    let mut stack_path = Vec::new();
+    let mut stack_contents = vec![(String::new(), VecDeque::new())];
+    let mut map_path_solver_value = HashMap::new();
+    let mut default_path = None;
     let (class_name, style_val) = style_str! {
         details.header > summary {
             pointer-events: none;
@@ -370,15 +379,6 @@ fn Contents(
             }
         }
     };
-    let path_selected = use_location().pathname;
-    let path_selected =
-        Signal::derive(move || with!(|path_selected| path_selected[1..].to_string()));
-    // convert tree of solver into contents
-    let mut stack_solver_tree = vec![VecDeque::from(solver_tree)];
-    let mut stack_path = Vec::new();
-    let mut stack_contents = vec![(String::new(), VecDeque::new())];
-    let mut map_path_solver_value = HashMap::new();
-    let mut default_path = None;
     let contents = loop {
         match stack_solver_tree.pop() {
             Some(mut sub_solver_tree) => {
@@ -456,26 +456,19 @@ fn Contents(
         }
     });
     let header = create_node_ref();
-    // TODO: media query callback
-    // let media = window()
-    //     .match_media("only screen and (max-width: 1024px)")
-    //     .unwrap()
-    //     .unwrap();
-    // let cb = Closure::wrap(Box::new(move |e: JsValue| -> () {
-    //     println!("{:?}", e);
-    //     header;
-    // }) as Box<dyn Fn(JsValue) -> ()>);
-    // media
-    //     .add_event_listener_with_callback("change", cb.as_ref().unchecked_ref())
-    //     .unwrap();
-    // cb.forget();
+    let mobile = window()
+        .match_media("only screen and (max-width: 1024px)")
+        .unwrap()
+        .unwrap()
+        .matches();
+    println!("mobile = {mobile}");
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        <details class="header" open="" _ref=header>
+        <details class="header" open={ if mobile { None } else { Some("") } } _ref=header>
             <summary> "Contents" </summary>
             <ol class="root">
-                {contents}
+                { contents }
             </ol>
         </details>
     }
