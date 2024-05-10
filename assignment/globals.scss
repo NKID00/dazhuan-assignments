@@ -1,40 +1,15 @@
 html,
 body {
-  background-color: rgb(240, 245, 247);
-  font-family: "Atkinson Hyperlegible", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    background-color: rgb(240, 245, 247);
+    font-family: "Atkinson Hyperlegible", system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
 }
 
-code, pre {
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-  font-family: "DejaVu Sans Mono", ui-monospace, monospace;
-}
-
-.truth-table {
-  > thead > tr {
-    border-top: 1px solid #333;
-    border-bottom: 1px solid #333;
-  }
-
-  > tbody > tr:last-child {
-    border-bottom: 1px solid #333;
-  }
-}
-
-.truth-table {
-  th:first-child,
-  td:first-child {
-    border-left: 1px solid #333;
-  }
-
-  th:last-child,
-  td:last-child {
-    border-right: 1px solid #333;
-  }
-
-  th,
-  td {
-    text-align: center;
-    padding: 0.3rem 1.5rem;
-  }
+code,
+pre {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    font-family: "DejaVu Sans Mono", ui-monospace, "Cascadia Code", Menlo,
+        "Source Code Pro", Consolas, monospace;
 }

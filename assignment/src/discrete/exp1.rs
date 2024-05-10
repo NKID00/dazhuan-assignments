@@ -5,6 +5,7 @@ use std::{
 
 use itertools::Itertools;
 use leptos::*;
+use leptos_meta::Style;
 use pest::{
     error::Error as PestError,
     iterators::{Pair, Pairs},
@@ -13,6 +14,7 @@ use pest::{
 };
 use pest_derive::Parser;
 use shiyanyi::*;
+use stylers::style_str;
 
 #[derive(Parser)]
 #[grammar = "discrete/propositional_formula.pest"]
@@ -263,14 +265,40 @@ impl Solver for Exp1 {
         };
         let propositions = expr.propositions().into_iter().sorted().collect_vec();
         let truth_table = expr.truth_table();
+        let (class_name, style_val) = style_str! {
+            thead > tr {
+                border-top: 1px solid #333;
+                border-bottom: 1px solid #333;
+            }
+
+            tbody > tr:last-child {
+                border-bottom: 1px solid #333;
+            }
+
+            th:first-child, td:first-child {
+                border-left: 1px solid #333;
+            }
+
+            th:last-child, td:last-child {
+                border-right: 1px solid #333;
+            }
+
+            th, td {
+                text-align: center;
+                padding: 0.3rem 1.5rem;
+            }
+        };
         view! {
+            class = class_name,
+            <Style> {style_val} </Style>
             <div class="mb-10">
                 <p class="font-bold mb-2"> "真值表" </p>
-                <table class="truth-table">
+                <table>
                     <thead>
                         <tr>
                             {
                                 propositions.iter().map(|p| view! {
+                                    class = class_name,
                                     <th><KaTeX expr={ p.to_string() } /></th>
                                 }).collect_vec()
                             }
@@ -279,9 +307,11 @@ impl Solver for Exp1 {
                     </thead>
                     <tbody> {
                         truth_table.iter().map(|(assignment, result)| view! {
+                            class = class_name,
                             <tr>
                                 {
                                     propositions.iter().map(|p| view! {
+                                        class = class_name,
                                         <td><KaTeX expr={ if assignment[p] { r"\mathbf{T}" } else { r"\mathbf{F}" } } /></td>
                                     }).collect_vec()
                                 }
