@@ -1,6 +1,6 @@
 # dazhuan-assignments
 
-Web-based solutions of assignments written in Rust, comes with a framework (shiyanyi, "experiment no. 1" in Chinese) to handle all the boilerplate stuff.
+Web-based solutions of assignments written in Rust, comes with a framework (shiyanyi, "lab 1" in Chinese) to handle all the boilerplate stuff.
 
 > What's wrong with cargo workspaces?
 >
