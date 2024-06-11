@@ -6,6 +6,7 @@ fn parse(token_stream: Vec<String>) -> () {
 }
 
 #[test]
+#[ignore = "not implemented"]
 fn test_parser() {
 }
 
