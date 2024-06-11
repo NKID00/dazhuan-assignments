@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use indoc::indoc;
 use itertools::Itertools;
 use leptos::*;
@@ -273,6 +275,16 @@ pub struct Token {
     pub raw: String,
 }
 
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}, {:?} at {}:{}",
+            self.token, self.raw, self.row, self.col
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenValue {
     Ident(Ident),
@@ -280,6 +292,18 @@ pub enum TokenValue {
     Kw(Kw),
     Op(Op),
     LiteralInt(LiteralInt),
+}
+
+impl Display for TokenValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TokenValue::Ident(ident) => write!(f, "Ident({})", ident.name),
+            TokenValue::Sym(sym) => write!(f, "Sym::{sym:?}"),
+            TokenValue::Kw(kw) => write!(f, "Kw::{kw:?}"),
+            TokenValue::Op(op) => write!(f, "Op::{op:?}"),
+            TokenValue::LiteralInt(literal_int) => write!(f, "LiteralInt({})", literal_int.value),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1797,15 +1821,7 @@ impl Solver for LexerSolver {
                 .into_view()
             }
         };
-        let tokens_string = tokens
-            .iter()
-            .map(|token| {
-                format!(
-                    "{:?} ({:?} at {}:{})",
-                    token.token, token.raw, token.row, token.col
-                )
-            })
-            .join("\n");
+        let tokens_string = tokens.iter().map(|token| token.to_string()).join("\n");
         view! {
             <div class="mb-10">
                 <p class="font-bold mb-2"> "预处理" </p>
