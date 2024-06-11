@@ -533,7 +533,8 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
             margin-right: 2rem;
             border-radius: 0.25rem;
             border: 2px solid rgb(229, 231, 235);
-            font-family: "DejaVu Sans Mono", ui-monospace, monospace;
+            font-family: "DejaVu Sans Mono", ui-monospace, "Cascadia Code", Menlo,
+            "Source Code Pro", Consolas, monospace;
             min-height: 12rem;
         }
         .input > button {
