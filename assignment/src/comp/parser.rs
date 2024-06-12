@@ -1,6 +1,5 @@
 use std::{collections::HashMap, fmt::Display, sync::OnceLock};
 
-use indoc::indoc;
 use itertools::Itertools;
 use leptos::*;
 use leptos_meta::Style;
@@ -8,7 +7,7 @@ use shiyanyi::*;
 use stylers::style_str;
 use thiserror::Error;
 
-use super::{lex, preprocess, LiteralInt, Op, Sym, Token, TokenValue};
+use super::{lex, mark_erroneous_source, preprocess, LiteralInt, Op, Sym, Token, TokenValue};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Term {
@@ -534,6 +533,37 @@ pub enum ParseError {
     UnexpectedEos,
 }
 
+impl ParseError {
+    fn to_string_with_source(&self, input: String) -> String {
+        match self {
+            ParseError::InvalidToken { token } => mark_erroneous_source(
+                input,
+                token.row,
+                token.col,
+                token.raw.len(),
+                self.to_string(),
+            ),
+            ParseError::UnexpectedToken { token } => mark_erroneous_source(
+                input,
+                token.row,
+                token.col,
+                token.raw.len(),
+                self.to_string(),
+            ),
+            ParseError::ExtraToken { token } => mark_erroneous_source(
+                input,
+                token.row,
+                token.col,
+                token.raw.len(),
+                self.to_string(),
+            ),
+            ParseError::UnexpectedEos => {
+                mark_erroneous_source(input, usize::MAX, usize::MAX, 1, self.to_string())
+            }
+        }
+    }
+}
+
 fn parse(parse_table: LL1ParseTable, input: Vec<Token>) -> (ParseTrace, Result<(), ParseError>) {
     let mut trace = vec![];
     let mut stack = vec![];
@@ -661,6 +691,7 @@ fn parse(parse_table: LL1ParseTable, input: Vec<Token>) -> (ParseTrace, Result<(
 
 #[test]
 fn test_parse() {
+    use indoc::indoc;
     let source = indoc! {"
         a + b
     "}
@@ -708,13 +739,13 @@ impl Solver for ParserSolver {
     }
 
     fn solve(&self, input: String) -> View {
-        let preprocessed = match preprocess(input) {
+        let preprocessed = match preprocess(input.clone()) {
             Ok(preprocessed) => preprocessed,
             Err(e) => {
                 return view! {
                     <div class="mb-10">
                         <p class="font-bold mb-2"> "预处理" </p>
-                        <pre class="text-red-500"> { e.to_string() } </pre>
+                        <pre class="text-red-500"> { e.to_string_with_source(input) } </pre>
                     </div>
                 }
                 .into_view()
@@ -726,7 +757,7 @@ impl Solver for ParserSolver {
                 return view! {
                     <div class="mb-10">
                         <p class="font-bold mb-2"> "词法分析" </p>
-                        <pre class="text-red-500"> { e.to_string() } </pre>
+                        <pre class="text-red-500"> { e.to_string_with_source(input) } </pre>
                     </div>
                 }
                 .into_view()
@@ -745,14 +776,14 @@ impl Solver for ParserSolver {
             Err(e @ ParseError::InvalidToken { .. }) => view! {
                 <div class="mb-10">
                     <p class="font-bold mb-2"> "语法分析" </p>
-                    <pre class="text-red-500"> { e.to_string() } </pre>
+                    <pre class="text-red-500"> { e.to_string_with_source(input) } </pre>
                 </div>
             }
             .into_view(),
             Err(e) => view! {
                 <div class="mb-10">
                     <p class="font-bold mb-2"> "语法分析" </p>
-                    <pre class="text-red-500 mb-2"> { e.to_string() } </pre>
+                    <pre class="text-red-500 mb-2"> { e.to_string_with_source(input) } </pre>
                     { trace.into_view_with_table(table) }
                 </div>
             }

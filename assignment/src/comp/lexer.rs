@@ -17,12 +17,28 @@ pub struct PositionedChar {
 
 #[derive(Error, Debug, Clone)]
 pub enum PreprocessError {
-    #[error("invalid character {c:?} at {row}:{col}")]
+    #[error("invalid character {c:?}")]
     InvalidChar { c: char, row: usize, col: usize },
-    #[error("unexpected EOF at {row}:{col} inside block comment")]
+    #[error("unexpected EOF inside block comment")]
     EofWhileBlockComment { row: usize, col: usize },
-    #[error("nested block comment at {row}:{col} is not implemented")]
+    #[error("nested block comment is not implemented")]
     NestedBlockComment { row: usize, col: usize },
+}
+
+impl PreprocessError {
+    pub fn to_string_with_source(&self, input: String) -> String {
+        match self {
+            PreprocessError::InvalidChar { c: _, row, col } => {
+                mark_erroneous_source(input, *row, *col, 1, self.to_string())
+            }
+            PreprocessError::EofWhileBlockComment { row, col } => {
+                mark_erroneous_source(input, *row, *col, 1, self.to_string())
+            }
+            PreprocessError::NestedBlockComment { row, col } => {
+                mark_erroneous_source(input, *row, *col, 2, self.to_string())
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -380,10 +396,23 @@ pub struct LiteralInt {
 
 #[derive(Error, Debug, Clone)]
 pub enum LexError {
-    #[error("unexpected {c:?} at {row}:{col}")]
+    #[error("unexpected {c:?}")]
     UnexpectedChar { c: char, row: usize, col: usize },
-    #[error("unexpected EOF at {row}:{col}")]
+    #[error("unexpected EOF")]
     UnexpectedEof { row: usize, col: usize },
+}
+
+impl LexError {
+    pub fn to_string_with_source(&self, input: String) -> String {
+        match self {
+            LexError::UnexpectedChar { c: _, row, col } => {
+                mark_erroneous_source(input, *row, *col, 1, self.to_string())
+            }
+            LexError::UnexpectedEof { row, col } => {
+                mark_erroneous_source(input, *row, *col, 1, self.to_string())
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1756,6 +1785,33 @@ fn test_lex() {
     );
 }
 
+pub fn mark_erroneous_source(
+    input: String,
+    row: usize,
+    col: usize,
+    len: usize,
+    message: String,
+) -> String {
+    let row = match row {
+        usize::MAX => input.split('\n').count(),
+        row => row,
+    };
+    let col = match col {
+        usize::MAX => input.split('\n').last().unwrap().len() + 1,
+        col => col,
+    };
+    let line_num_len = row.to_string().len();
+    let line_num_space = " ".repeat(line_num_len);
+    let message = format!("error: {message}");
+    let input_info = format!("{line_num_space}--> input:{row}:{col}");
+    let line_num = format!("{row} | ");
+    let line = input.splitn(row + 1, '\n').nth(row - 1).unwrap();
+    let line_num_marker = format!("{line_num_space} | ");
+    let space: String = " ".repeat(col - 1);
+    let marker: String = "^".repeat(len);
+    format!("{message}\n{input_info}\n{line_num}{line}\n{line_num_marker}{space}{marker}")
+}
+
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct LexerSolver;
 
@@ -1785,13 +1841,13 @@ impl Solver for LexerSolver {
     }
 
     fn solve(&self, input: String) -> View {
-        let preprocessed = match preprocess(input) {
+        let preprocessed = match preprocess(input.clone()) {
             Ok(preprocessed) => preprocessed,
             Err(e) => {
                 return view! {
                     <div class="mb-10">
                         <p class="font-bold mb-2"> "预处理" </p>
-                        <pre class="text-red-500"> { e.to_string() } </pre>
+                        <pre class="text-red-500"> { e.to_string_with_source(input) } </pre>
                     </div>
                 }
                 .into_view()
@@ -1808,7 +1864,7 @@ impl Solver for LexerSolver {
                     </div>
                     <div class="mb-10">
                         <p class="font-bold mb-2"> "词法分析" </p>
-                        <pre class="text-red-500"> { e.to_string() } </pre>
+                        <pre class="text-red-500"> { e.to_string_with_source(input) } </pre>
                     </div>
                 }
                 .into_view()
