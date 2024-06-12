@@ -8,7 +8,7 @@ use thiserror::Error;
 
 use crate::linalg::Row;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PositionedChar {
     pub c: char,
     pub row: usize,
@@ -25,7 +25,7 @@ pub enum PreprocessError {
     NestedBlockComment { row: usize, col: usize },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum CommentState {
     None,
     /// a slash is met
@@ -36,7 +36,7 @@ enum CommentState {
     LeavingBlock,
 }
 
-fn preprocess(source: String) -> Result<Vec<PositionedChar>, PreprocessError> {
+pub fn preprocess(source: String) -> Result<Vec<PositionedChar>, PreprocessError> {
     let mut preprocessed = vec![];
     let mut row = 1;
     let mut col = 1;
@@ -267,7 +267,7 @@ fn test_preprocess() {
 
 /// Token ::= Ident | Sym | Kw | Op
 /// Ident ::= [_a-zA-Z][_a-zA-Z0-9]*
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
     pub token: TokenValue,
     pub row: usize,
@@ -285,7 +285,7 @@ impl Display for Token {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenValue {
     Ident(Ident),
     Sym(Sym),
@@ -306,12 +306,12 @@ impl Display for TokenValue {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Ident {
     pub name: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Sym {
     /// '('
     LeftParen,
@@ -331,7 +331,7 @@ pub enum Sym {
     Semicolon,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Kw {
     If,
     Int,
@@ -343,7 +343,7 @@ pub enum Kw {
     Continue,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Op {
     /// '+'
     Add,
@@ -373,7 +373,7 @@ pub enum Op {
     Not,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LiteralInt {
     pub value: String,
 }
@@ -382,18 +382,11 @@ pub struct LiteralInt {
 pub enum LexError {
     #[error("unexpected {c:?} at {row}:{col}")]
     UnexpectedChar { c: char, row: usize, col: usize },
-    #[error("unexpected {c:?} (expect {expected:?}) at {row}:{col}")]
-    UnexpectedCharWithExpected {
-        c: char,
-        expected: char,
-        row: usize,
-        col: usize,
-    },
     #[error("unexpected EOF at {row}:{col}")]
     UnexpectedEof { row: usize, col: usize },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum AutomataState {
     Start,
     Ident_,
@@ -438,7 +431,7 @@ enum AutomataState {
     LiteralZero,
 }
 
-fn lex(preprocessed: Vec<PositionedChar>) -> Result<Vec<Token>, LexError> {
+pub fn lex(preprocessed: Vec<PositionedChar>) -> Result<Vec<Token>, LexError> {
     // TODO: rewrite this tedious (required by the assignment) with macros
     use AutomataState::*;
     if preprocessed.is_empty() {
