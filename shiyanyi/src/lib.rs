@@ -18,6 +18,7 @@ use leptos_meta::*;
 use leptos_router::*;
 use stylers::style_str;
 use wasm_bindgen::prelude::*;
+use web_sys::HtmlScriptElement;
 
 #[macro_export]
 macro_rules! println {
@@ -135,6 +136,7 @@ impl Shiyanyi {
     }
 }
 
+#[derive(Clone)]
 enum SectionOrSolver {
     Section {
         id: String,
@@ -232,10 +234,41 @@ fn get_location_hash_decoded() -> Option<String> {
         })
 }
 
+fn register_katex_load_callback(set_katex_loaded: WriteSignal<bool>, katex_src: &str) {
+    let closure: Box<dyn FnMut(_)> = Box::new(move |_: web_sys::Event| {
+        set_katex_loaded(true);
+    });
+    let closure = Closure::wrap(closure);
+    let elements = document().get_elements_by_tag_name("script");
+    let len = elements.length();
+    let elements = (0..len).map(|i| elements.get_with_index(i));
+    for element in elements {
+        let Some(element) = element else {
+            continue;
+        };
+        let Ok(element) = element.dyn_into::<HtmlScriptElement>() else {
+            continue;
+        };
+        if element.src() == katex_src {
+            element
+                .add_event_listener_with_callback("load", closure.as_ref().unchecked_ref())
+                .unwrap();
+            break;
+        }
+    }
+    closure.forget();
+}
+
 #[component]
 fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     provide_meta_context();
     let (map_path_solver, set_map_path_solver) = create_signal(HashMap::new());
+    let (katex_loaded, set_katex_loaded) = create_signal(false);
+    let katex_src = "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js";
+    let element = create_node_ref();
+    element.on_load(move |_| {
+        register_katex_load_callback(set_katex_loaded, katex_src);
+    });
     let (class_name, style_val) = style_str! {
         :deep(#shiyanyi) {
             flex: 1;
@@ -291,19 +324,27 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        <Link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous" />
-        <Script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" />
+        <Link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" integrity="sha384-wcIxkf4k558AjM3Yz3BBFQUbk/zgIYC2R0QpeeYb+TwlBVMrlgLqwRjRtGZiK7ww" crossorigin="anonymous" />
+        <Script defer="" src={ katex_src } integrity="sha384-hIoBPJpTUs74ddyc4bFZSM1TVlQDA60VBbJS0oA934VSz82sBx1X7kSx2ATBDIyd" crossorigin="anonymous" />
         <Router>
-            <div class="root">
-                <nav> <Contents solver_tree set_map_path_solver /> </nav>
-                <main>
-                    <Routes>
-                        <Route path="" view=Outlet >
-                            <Route path="*path" view=move || view! { <SolverWrapper map_path_solver /> } />
-                        </Route>
-                    </Routes>
-                </main>
-            </div>
+            // <Show when=katex_loaded fallback=|| view! {
+            //     <div class="flex-1 flex flex-col justify-center items-center">
+            //         <div class="flex flex-col items-center gap-4 px-8 text-center">
+            //             <h1 class="text-4xl"> "Loading" </h1>
+            //         </div>
+            //     </div>
+            // }>
+                <div class="root" node_ref=element>
+                    <nav> <Contents solver_tree set_map_path_solver /> </nav>
+                    <main>
+                        <Routes>
+                            <Route path="" view=Outlet >
+                                <Route path="*path" view=move || view! { <SolverWrapper map_path_solver katex_loaded /> } />
+                            </Route>
+                        </Routes>
+                    </main>
+                </div>
+            // </Show>
         </Router>
     }
 }
@@ -475,7 +516,10 @@ fn Contents(
 }
 
 #[component]
-fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> impl IntoView {
+fn SolverWrapper(
+    map_path_solver: ReadSignal<HashMap<String, SolverObject>>,
+    katex_loaded: ReadSignal<bool>,
+) -> impl IntoView {
     let (class_name_not_found, style_val_not_found) = style_str! {
         div {
             flex: 1;
@@ -607,8 +651,13 @@ fn SolverWrapper(map_path_solver: ReadSignal<HashMap<String, SolverObject>>) -> 
     let path = Signal::derive(move || {
         with!(|params| params.get("path").unwrap_or(&"".to_string()).to_string())
     });
-    let s =
-        Signal::derive(move || with!(|path, map_path_solver| map_path_solver.get(path).cloned()));
+    let s = Signal::derive(move || {
+        with!(|katex_loaded, path, map_path_solver| if *katex_loaded {
+            map_path_solver.get(path).cloned()
+        } else {
+            None
+        })
+    });
     let input: NodeRef<html::Textarea> = create_node_ref();
     let default_input = Signal::derive(move || {
         with!(|s| s

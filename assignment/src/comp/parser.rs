@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fmt::Display, sync::OnceLock};
 
+use indoc::indoc;
 use itertools::Itertools;
 use leptos::*;
 use leptos_meta::Style;
@@ -691,7 +692,6 @@ fn parse(parse_table: LL1ParseTable, input: Vec<Token>) -> (ParseTrace, Result<(
 
 #[test]
 fn test_parse() {
-    use indoc::indoc;
     let source = indoc! {"
         a + b
     "}
@@ -731,7 +731,17 @@ impl Solver for ParserSolver {
     }
 
     fn description(&self) -> View {
-        "输入符号串.".into_view()
+        view! {
+            <p class="mb-2"> "利用手工构造的 LL(1) 分析表对以下算术文法定义的符号串进行识别." </p>
+            <p class="mb-2"><KaTeX display_mode=true fleqn=true expr={ indoc! {r"
+                \begin{align*}
+                    E & ::= E \  \texttt{+} \  T \  | \  T \  \\
+                    T & ::= T \  \texttt{*} \  F \  | \  F \  \\
+                    F & ::= \texttt{(} \  E \  \texttt{)} \  | \  \textrm{Ident} \  | \  \textrm{LiteralInt} \\
+                \end{align*}
+            "} } /></p>
+            <p class="mb-2"> "输入符号串." </p>
+        }.into_view()
     }
 
     fn default_input(&self) -> String {
