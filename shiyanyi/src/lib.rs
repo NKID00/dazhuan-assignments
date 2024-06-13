@@ -664,7 +664,7 @@ fn SolverWrapper(
     let (duration, set_duration) = create_signal(None);
     create_effect(move |first_run| {
         if !katex_loaded() {
-            return;
+            return true;
         }
         with!(|s| document().set_title(
             s.as_ref()
@@ -672,7 +672,7 @@ fn SolverWrapper(
                 .as_str()
         ));
         if let Some(input) = input.get_untracked() {
-            if first_run.is_none() {
+            if first_run.unwrap_or(true) {
                 if let Some(input_from_hash) = get_location_hash_decoded() {
                     input.set_value(input_from_hash.as_str());
                 } else {
@@ -683,9 +683,12 @@ fn SolverWrapper(
                 default_input
                     .with_untracked(|default_input| input.set_value(default_input.as_str()));
             }
+            set_duration(None);
+            set_answer(None);
+            false
+        } else {
+            true
         }
-        set_duration(None);
-        set_answer(None);
     });
     window_event_listener(ev::hashchange, move |_| {
         if let Some(input) = input() {
