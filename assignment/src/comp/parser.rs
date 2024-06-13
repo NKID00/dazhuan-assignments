@@ -731,16 +731,119 @@ impl Solver for ParserSolver {
     }
 
     fn description(&self) -> View {
+        let (class_name, style_val) = style_str! {
+            thead > tr {
+                border-top: 1px solid #333;
+                border-bottom: 1px solid #333;
+            }
+
+            tbody > tr {
+                border-bottom: 1px solid #333;
+            }
+
+            th:last-child, td:last-child {
+                border-right: 1px solid #333;
+            }
+
+            th, td {
+                text-align: center;
+                padding: 0.3rem 1rem;
+                border-left: 1px solid #333;
+            }
+        };
         view! {
-            <p class="mb-2"> "利用手工构造的 LL(1) 分析表对以下算术文法定义的符号串进行识别." </p>
+            class = class_name,
+            <Style> {style_val} </Style>
+            <p class="mb-2"> "对以下算术文法定义的符号串进行识别." </p>
             <p class="mb-2"><KaTeX display_mode=true fleqn=true expr={ indoc! {r"
                 \begin{align*}
-                    E & ::= E \  \texttt{+} \  T \  | \  T \  \\
-                    T & ::= T \  \texttt{*} \  F \  | \  F \  \\
+                    E & ::= E \  \texttt{+} \  T \  | \  T \\
+                    T & ::= T \  \texttt{*} \  F \  | \  F \\
                     F & ::= \texttt{(} \  E \  \texttt{)} \  | \  \textrm{Ident} \  | \  \textrm{LiteralInt} \\
                 \end{align*}
             "} } /></p>
-            <p class="mb-2"> "输入符号串." </p>
+            <p class="mb-2"> "手工消除左递归得到以下文法." </p>
+            <p class="mb-2"><KaTeX display_mode=true fleqn=true leqno=true expr={ indoc! {r"
+                \begin{align}
+                    \quad \quad E & ::= T \  E^{\prime} \\
+                    \quad \quad E^{\prime} & ::= + \  T \  E^{\prime} \\
+                    \quad \quad E^{\prime} & ::= \epsilon \\
+                    \quad \quad T & ::= F \  T^{\prime} \\
+                    \quad \quad T^{\prime} & ::= * \  F \  T^{\prime} \\
+                    \quad \quad T^{\prime} & ::= \epsilon \\
+                    \quad \quad F & ::= \texttt{(} \  E \  \texttt{)} \\
+                    \quad \quad F & ::= \textrm{Ident} \\
+                    \quad \quad F & ::= \textrm{LiteralInt} \\
+                \end{align}
+            "} } /></p>
+            <p class="mb-2"> "手工构造得到以下 LL(1) 分析表. (数字索引自上述文法)" </p>
+            <table class="mb-2">
+                <thead>
+                    <tr>
+                        <th />
+                        <th><KaTeX expr=r"\texttt{+}" /></th>
+                        <th><KaTeX expr=r"\texttt{*}" /></th>
+                        <th><KaTeX expr=r"\texttt{(}" /></th>
+                        <th><KaTeX expr=r"\texttt{)}" /></th>
+                        <th><KaTeX expr=r"\textrm{Ident}" /></th>
+                        <th><KaTeX expr=r"\textrm{LiteralInt}" /></th>
+                        <th><KaTeX expr=r"\#" /></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><KaTeX expr=r"E" /></td>
+                        <td />
+                        <td />
+                        <td><KaTeX expr=r"1" /></td>
+                        <td />
+                        <td><KaTeX expr=r"1" /></td>
+                        <td><KaTeX expr=r"1" /></td>
+                        <td />
+                    </tr>
+                    <tr>
+                        <td><KaTeX expr=r"E^{\prime}" /></td>
+                        <td><KaTeX expr=r"2" /></td>
+                        <td />
+                        <td />
+                        <td><KaTeX expr=r"3" /></td>
+                        <td />
+                        <td />
+                        <td><KaTeX expr=r"3" /></td>
+                    </tr>
+                    <tr>
+                        <td><KaTeX expr=r"T" /></td>
+                        <td />
+                        <td />
+                        <td><KaTeX expr=r"4" /></td>
+                        <td />
+                        <td><KaTeX expr=r"4" /></td>
+                        <td><KaTeX expr=r"4" /></td>
+                        <td />
+                    </tr>
+                    <tr>
+                        <td><KaTeX expr=r"T^{\prime}" /></td>
+                        <td><KaTeX expr=r"6" /></td>
+                        <td><KaTeX expr=r"5" /></td>
+                        <td />
+                        <td><KaTeX expr=r"6" /></td>
+                        <td />
+                        <td />
+                        <td><KaTeX expr=r"6" /></td>
+                    </tr>
+                    <tr>
+                        <td><KaTeX expr=r"F" /></td>
+                        <td />
+                        <td />
+                        <td><KaTeX expr=r"7" /></td>
+                        <td />
+                        <td><KaTeX expr=r"8" /></td>
+                        <td><KaTeX expr=r"9" /></td>
+                        <td />
+                    </tr>
+                </tbody>
+            </table>
+            <p class="mb-2"> "在下方输入符号串使用上述 LL(1) 分析表进行识别." </p>
         }.into_view()
     }
 
