@@ -651,13 +651,8 @@ fn SolverWrapper(
     let path = Signal::derive(move || {
         with!(|params| params.get("path").unwrap_or(&"".to_string()).to_string())
     });
-    let s = Signal::derive(move || {
-        with!(|katex_loaded, path, map_path_solver| if *katex_loaded {
-            map_path_solver.get(path).cloned()
-        } else {
-            None
-        })
-    });
+    let s =
+        Signal::derive(move || with!(|path, map_path_solver| map_path_solver.get(path).cloned()));
     let input: NodeRef<html::Textarea> = create_node_ref();
     let default_input = Signal::derive(move || {
         with!(|s| s
@@ -668,6 +663,9 @@ fn SolverWrapper(
     let (answer, set_answer) = create_signal(None);
     let (duration, set_duration) = create_signal(None);
     create_effect(move |first_run| {
+        if !katex_loaded() {
+            return;
+        }
         with!(|s| document().set_title(
             s.as_ref()
                 .map_or("Not Found".to_string(), |s| s.title())
@@ -709,47 +707,55 @@ fn SolverWrapper(
                 <div> <h1> "Not Found" </h1> </div>
             }
         >
-            <div class="solver">
-                <h1 class="solver-title"> { move || with!(move |s| s.as_ref().unwrap().title()) } </h1>
-                <div class="section description">
-                    <h2> "Description." </h2>
-                    <div> { move || with!(move |s| s.as_ref().unwrap().description()) } </div>
-                </div>
-                <div class="section input">
-                    <h2> "Input." </h2>
-                    <textarea node_ref=input />
-                    <button on:click=move |_| {
-                        let input = match input.get_untracked() {
-                            Some(input) => input,
-                            None => return,
-                        };
-                        let input_string = match input.value().as_str() {
-                            "" => {
-                                let default_input = default_input.get_untracked();
-                                input.set_value(default_input.as_str());
-                                default_input
-                            }
-                            s => s.to_string(),
-                        };
-                        set_location_hash_encoded(input_string.as_str());
-                        let begin = window().performance().unwrap().now();
-                        let answer = s.with_untracked(|s| s.as_ref().unwrap().solve(input_string));
-                        set_duration(Some(1.max((window().performance().unwrap().now() - begin) as u64)));
-                        set_answer(Some(answer));
-                    }> "Submit" </button>
-                </div>
-                <Show when=move || with!(|answer| answer.is_some())>
-                    <div class="section answer">
-                        <h2> {
-                            move || with!(|duration| match duration {
-                                Some(duration) => format!("Answer. (took {}ms)", duration),
-                                None => "Answer.".to_string()
-                            })
-                        } </h2>
-                        <div> { answer } </div>
+            <Show
+                when=katex_loaded
+                fallback=move || view! {
+                    class = class_name_not_found,
+                    <div> <h1> "Loading" </h1> </div>
+                }
+            >
+                <div class="solver">
+                    <h1 class="solver-title"> { move || with!(move |s| s.as_ref().unwrap().title()) } </h1>
+                    <div class="section description">
+                        <h2> "Description." </h2>
+                        <div> { move || with!(move |s| s.as_ref().unwrap().description()) } </div>
                     </div>
-                </Show>
-            </div>
+                    <div class="section input">
+                        <h2> "Input." </h2>
+                        <textarea node_ref=input />
+                        <button on:click=move |_| {
+                            let input = match input.get_untracked() {
+                                Some(input) => input,
+                                None => return,
+                            };
+                            let input_string = match input.value().as_str() {
+                                "" => {
+                                    let default_input = default_input.get_untracked();
+                                    input.set_value(default_input.as_str());
+                                    default_input
+                                }
+                                s => s.to_string(),
+                            };
+                            set_location_hash_encoded(input_string.as_str());
+                            let begin = window().performance().unwrap().now();
+                            let answer = s.with_untracked(|s| s.as_ref().unwrap().solve(input_string));
+                            set_duration(Some(1.max((window().performance().unwrap().now() - begin) as u64)));
+                            set_answer(Some(answer));
+                        }> "Submit" </button>
+                    </div>
+                    <Show when=move || with!(|answer| answer.is_some())>
+                        <div class="section answer">
+                            <h2> {
+                                move || with!(|duration| match duration {
+                                    Some(duration) => format!("Answer. (took {}ms)", duration),
+                                    None => "Answer.".to_string()
+                                })
+                            } </h2>
+                            <div> { answer } </div>
+                        </div>
+                    </Show>
+                </div>
+            </Show>
         </Show>
     }
 }
