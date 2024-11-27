@@ -26,12 +26,11 @@ fn connected_component_count(matrix: &Matrix<bool>) -> usize {
     let mut count = 0usize;
     while !visited.iter().all(|x| *x) {
         dfs1(
-            &matrix,
+            matrix,
             visited
                 .iter()
                 .enumerate()
-                .filter(|(_, visited)| !*visited)
-                .next()
+                .find(|(_, visited)| !*visited)
                 .unwrap()
                 .0,
             &mut visited,
@@ -97,8 +96,8 @@ impl Solver for Exp4 {
         let is_connected = connected_component_count(&matrix) == 1;
         let (is_eulerian, is_semi_eulerian, path) = if is_connected {
             let mut odd_degree_vertices = Vec::new();
-            for i in 0..vertex_count {
-                if degree[i].is_odd() {
+            for (i, d) in degree.iter().enumerate().take(vertex_count) {
+                if d.is_odd() {
                     odd_degree_vertices.push(i)
                 }
             }

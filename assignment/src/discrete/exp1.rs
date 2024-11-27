@@ -181,7 +181,7 @@ impl TruthTable<'_> {
                                 if assignment[p] {
                                     format!(r"\lnot {}", p)
                                 } else {
-                                    format!("{}", p)
+                                    p.to_string()
                                 }
                             })
                             .join(r" \lor "),
@@ -202,7 +202,7 @@ impl TruthTable<'_> {
                             .sorted()
                             .map(|p| {
                                 if assignment[p] {
-                                    format!("{}", p)
+                                    p.to_string()
                                 } else {
                                     format!(r" \lnot {}", p)
                                 }

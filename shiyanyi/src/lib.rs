@@ -27,9 +27,17 @@ macro_rules! println {
 
 #[must_use]
 #[derive(Debug)]
-pub struct EmptyShiyanyiBuilder;
+pub struct EmptyShiyanyiBuilder {
+    base_path: String,
+}
 
 impl EmptyShiyanyiBuilder {
+    pub fn base_path(self, base_path: impl ToString) -> Self {
+        Self {
+            base_path: base_path.to_string(),
+        }
+    }
+
     pub fn section(
         self,
         id: impl ToString,
@@ -38,6 +46,7 @@ impl EmptyShiyanyiBuilder {
     ) -> ShiyanyiBuilder {
         let builder = ShiyanyiBuilder {
             children: Vec::new(),
+            base_path: self.base_path,
         };
         builder.section(id, title, children)
     }
@@ -45,6 +54,7 @@ impl EmptyShiyanyiBuilder {
     pub fn solver(self, solver: Box<dyn Solver>) -> ShiyanyiBuilder {
         let builder = ShiyanyiBuilder {
             children: Vec::new(),
+            base_path: self.base_path,
         };
         builder.solver(solver)
     }
@@ -61,9 +71,17 @@ impl EmptyShiyanyiBuilder {
 #[derive(Debug)]
 pub struct ShiyanyiBuilder {
     children: Vec<SectionOrSolver>,
+    base_path: String,
 }
 
 impl ShiyanyiBuilder {
+    pub fn base_path(self, base_path: impl ToString) -> Self {
+        Self {
+            base_path: base_path.to_string(),
+            ..self
+        }
+    }
+
     pub fn section(mut self, id: impl ToString, title: impl ToString, children: Self) -> Self {
         let id = id.to_string();
         if id.contains(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_')) {
@@ -101,6 +119,7 @@ impl ShiyanyiBuilder {
 
     pub fn build(self) -> Shiyanyi {
         Shiyanyi {
+            base_path: self.base_path,
             children: self.children,
         }
     }
@@ -108,12 +127,15 @@ impl ShiyanyiBuilder {
 
 #[derive(Debug)]
 pub struct Shiyanyi {
+    base_path: String,
     children: Vec<SectionOrSolver>,
 }
 
 impl Shiyanyi {
     pub fn builder() -> EmptyShiyanyiBuilder {
-        EmptyShiyanyiBuilder
+        EmptyShiyanyiBuilder {
+            base_path: "".to_string(),
+        }
     }
 
     pub fn boot(self, mount_point_element_id: &str) {
@@ -131,7 +153,7 @@ impl Shiyanyi {
         }
         mount_to(
             mount_point,
-            move || view! { <ShiyanyiComponent solver_tree={ self.children } /> },
+            move || view! { <ShiyanyiComponent base_path={ self.base_path } solver_tree={ self.children } /> },
         );
     }
 }
@@ -260,11 +282,11 @@ fn register_katex_load_callback(set_katex_loaded: WriteSignal<bool>, katex_src: 
 }
 
 #[component]
-fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
+fn ShiyanyiComponent(base_path: String, solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     provide_meta_context();
     let (map_path_solver, set_map_path_solver) = create_signal(HashMap::new());
     let (katex_loaded, set_katex_loaded) = create_signal(false);
-    let katex_src = "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js";
+    let katex_src = "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js";
     let element = create_node_ref();
     element.on_load(move |_| {
         register_katex_load_callback(set_katex_loaded, katex_src);
@@ -324,33 +346,26 @@ fn ShiyanyiComponent(solver_tree: Vec<SectionOrSolver>) -> impl IntoView {
     view! {
         class = class_name,
         <Style> { style_val } </Style>
-        <Link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" integrity="sha384-wcIxkf4k558AjM3Yz3BBFQUbk/zgIYC2R0QpeeYb+TwlBVMrlgLqwRjRtGZiK7ww" crossorigin="anonymous" />
-        <Script defer="" src={ katex_src } integrity="sha384-hIoBPJpTUs74ddyc4bFZSM1TVlQDA60VBbJS0oA934VSz82sBx1X7kSx2ATBDIyd" crossorigin="anonymous" />
+        <Link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous" />
+        <Script defer="" src={ katex_src } integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous" />
         <Router>
-            // <Show when=katex_loaded fallback=|| view! {
-            //     <div class="flex-1 flex flex-col justify-center items-center">
-            //         <div class="flex flex-col items-center gap-4 px-8 text-center">
-            //             <h1 class="text-4xl"> "Loading" </h1>
-            //         </div>
-            //     </div>
-            // }>
-                <div class="root" node_ref=element>
-                    <nav> <Contents solver_tree set_map_path_solver /> </nav>
-                    <main>
-                        <Routes>
-                            <Route path="" view=Outlet >
-                                <Route path="*path" view=move || view! { <SolverWrapper map_path_solver katex_loaded /> } />
-                            </Route>
-                        </Routes>
-                    </main>
-                </div>
-            // </Show>
+            <div class="root" node_ref=element>
+                <nav> <Contents base_path={ base_path.clone() } solver_tree set_map_path_solver /> </nav>
+                <main>
+                    <Routes base={ base_path }>
+                        <Route path="" view=Outlet >
+                            <Route path="*path" view=move || view! { <SolverWrapper map_path_solver katex_loaded /> } />
+                        </Route>
+                    </Routes>
+                </main>
+            </div>
         </Router>
     }
 }
 
 #[component]
 fn Contents(
+    base_path: String,
     solver_tree: Vec<SectionOrSolver>,
     set_map_path_solver: WriteSignal<HashMap<String, SolverObject>>,
 ) -> impl IntoView {
@@ -439,11 +454,16 @@ fn Contents(
                                 } else {
                                     format!("{}/{}", stack_path.iter().join("/"), id)
                                 };
-                                if default_path.is_none() {
-                                    default_path = Some(path.clone());
-                                }
                                 if map_path_solver_value.insert(path.clone(), solver).is_some() {
                                     panic!("paths of two solvers are the same: {}", path);
+                                }
+                                let path = if base_path.is_empty() {
+                                    path
+                                } else {
+                                    format!("{}/{}", base_path, path)
+                                };
+                                if default_path.is_none() {
+                                    default_path = Some(path.clone());
                                 }
                                 sub_contents.1.push_back(view! {
                                     class = class_name,
@@ -492,7 +512,9 @@ fn Contents(
     let default_path = default_path.unwrap();
     let navigate = use_navigate();
     create_effect(move |_| {
-        if with!(|path_selected| path_selected.is_empty()) {
+        if with!(
+            |path_selected| path_selected.is_empty() || path_selected == &format!("{}/", base_path)
+        ) {
             navigate(default_path.as_str(), Default::default());
         }
     });
@@ -502,7 +524,6 @@ fn Contents(
         .unwrap()
         .unwrap()
         .matches();
-    println!("mobile = {mobile}");
     view! {
         class = class_name,
         <Style> { style_val } </Style>

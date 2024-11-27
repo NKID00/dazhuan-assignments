@@ -71,7 +71,7 @@ impl Display for LinearEquations {
                 self.iter()
                     .filter(|r| !r.iter().all(|v| v.is_zero()))
                     .map(|r| {
-                        if r[0..(n - 1)].iter().all(|v| v.is_zero()) {
+                        if r.iter().take(n - 1).all(|v| v.is_zero()) {
                             format!(
                                 r"{} 0 & = \  & {} &",
                                 repeat_n("& ", (n - 1) * 2).join(""),
@@ -80,8 +80,8 @@ impl Display for LinearEquations {
                         } else {
                             let mut terms = vec!["".to_string()];
                             let mut first_term = true;
-                            for j in 0..n - 1 {
-                                if r[j].is_zero() {
+                            for (j, coeff) in r.iter().enumerate().take(n - 1) {
+                                if coeff.is_zero() {
                                     terms.push("&".to_string());
                                     continue;
                                 }
@@ -89,11 +89,11 @@ impl Display for LinearEquations {
                                     r" \  {} \  & {} x_{}",
                                     if first_term {
                                         first_term = false;
-                                        r[j].sign_to_tex()
+                                        coeff.sign_to_tex()
                                     } else {
-                                        r[j].sign_to_tex_with_positive_sign()
+                                        coeff.sign_to_tex_with_positive_sign()
                                     },
-                                    r[j].abs().to_tex_ignore_one(),
+                                    coeff.abs().to_tex_ignore_one(),
                                     j + 1
                                 ));
                             }
@@ -109,6 +109,7 @@ impl Display for LinearEquations {
 }
 
 pub trait Row {
+    #[allow(dead_code)]
     fn row(&self, row: usize) -> Vec<BigRational>;
 }
 
@@ -189,8 +190,8 @@ impl Solver for LinearEquationsSolver {
                     } else if nonzero.len() == 1 {
                         let x = nonzero.last().unwrap().0;
                         if main_unknowns.contains(&x) {
-                            for i in 0..col.len() {
-                                col[i] = -&col[i];
+                            for item in &mut col {
+                                *item = -&*item;
                             }
                             col.extend(repeat_n(BigRational::zero(), n - 1 - col.len()));
                             col[j] = BigRational::one();
@@ -199,8 +200,8 @@ impl Solver for LinearEquationsSolver {
                             main_unknowns.push(x);
                         }
                     } else if nonzero.len() > 1 {
-                        for i in 0..col.len() {
-                            col[i] = -&col[i];
+                        for item in &mut col {
+                            *item = -&*item;
                         }
                         col.extend(repeat_n(BigRational::zero(), n - 1 - col.len()));
                         col[j] = BigRational::one();
@@ -300,8 +301,8 @@ impl Solver for LinearEquationsSolver {
                     } else if nonzero.len() == 1 {
                         let x = nonzero.last().unwrap().0;
                         if main_unknowns.contains(&x) {
-                            for i in 0..col.len() {
-                                col[i] = -&col[i];
+                            for item in &mut col {
+                                *item = -&*item;
                             }
                             col.extend(repeat_n(BigRational::zero(), n - 1 - col.len()));
                             col[j] = BigRational::one();
@@ -310,8 +311,8 @@ impl Solver for LinearEquationsSolver {
                             main_unknowns.push(x);
                         }
                     } else if nonzero.len() > 1 {
-                        for i in 0..col.len() {
-                            col[i] = -&col[i];
+                        for item in &mut col {
+                            *item = -&*item;
                         }
                         col.extend(repeat_n(BigRational::zero(), n - 1 - col.len()));
                         col[j] = BigRational::one();

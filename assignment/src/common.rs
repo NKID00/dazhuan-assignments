@@ -121,10 +121,7 @@ impl ToTex for BigRational {
 
     fn to_tex_with_positive_sign(&self) -> String {
         if self.is_integer() {
-            format!(
-                r"{}{self}",
-                if self.is_negative() { "" } else { "+" }
-            )
+            format!(r"{}{self}", if self.is_negative() { "" } else { "+" })
         } else {
             format!(
                 r"{}\frac{{{}}}{{{}}}",
@@ -140,7 +137,7 @@ impl ToTex for BigRational {
             format!(
                 r"{}{}{}",
                 if self.is_negative() { r"\left(" } else { "" },
-                self.to_string(),
+                self,
                 if self.is_negative() { r"\right)" } else { "" },
             )
         } else {

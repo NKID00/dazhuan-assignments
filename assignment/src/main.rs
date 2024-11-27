@@ -4,18 +4,19 @@ use shiyanyi::Shiyanyi;
 
 mod common;
 mod comp;
-mod linalg;
 mod discrete;
+mod linalg;
 
 fn main() {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     Shiyanyi::builder()
+        .base_path("assignments")
         .section(
             "comp",
             "编译原理",
             Shiyanyi::builder()
                 .solver_default::<comp::LexerSolver>()
-                .solver_default::<comp::ParserSolver>()
+                .solver_default::<comp::ParserSolver>(),
         )
         .section(
             "linalg",

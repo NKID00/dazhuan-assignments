@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use leptos::*;
-use num::{bigint::ToBigInt as _, zero, BigInt, Integer};
+use num::{zero, BigInt, Integer};
 use shiyanyi::*;
 
 fn inv(numbers: &[BigInt]) -> BigInt {

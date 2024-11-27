@@ -189,7 +189,7 @@ impl Solver for MaximalLinearlyIndependentSolver {
                 <KaTeX expr={
                     format!(
                         r"\mathrm{{r}}\left({}\right) = {}",
-                        vector_set.to_string(),
+                        vector_set,
                         maximal_linearly_independent.len()
                     )
                 } />

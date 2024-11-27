@@ -6,8 +6,6 @@ use leptos::*;
 use shiyanyi::*;
 use thiserror::Error;
 
-use crate::linalg::Row;
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PositionedChar {
     pub c: char,
@@ -15,6 +13,7 @@ pub struct PositionedChar {
     pub col: usize,
 }
 
+#[allow(dead_code)]
 #[derive(Error, Debug, Clone)]
 pub enum PreprocessError {
     #[error("invalid character {c:?}")]
@@ -390,6 +389,7 @@ pub struct LiteralInt {
     pub value: String,
 }
 
+#[allow(dead_code)]
 #[derive(Error, Debug, Clone)]
 pub enum LexError {
     #[error("unexpected {c:?}")]

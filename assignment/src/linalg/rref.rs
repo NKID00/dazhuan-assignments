@@ -126,7 +126,7 @@ pub trait ReducedRowEchelonForm {
 
 impl ReducedRowEchelonForm for Matrix<BigRational> {
     fn reduced_row_echelon_form(&self) -> Self {
-        match reduced_row_echelon_form_with_steps(&self).pop() {
+        match reduced_row_echelon_form_with_steps(self).pop() {
             Some((_, matrix)) => matrix,
             None => self.clone(),
         }

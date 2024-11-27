@@ -8,7 +8,7 @@ use shiyanyi::*;
 use stylers::style_str;
 use thiserror::Error;
 
-use super::{lex, mark_erroneous_source, preprocess, LiteralInt, Op, Sym, Token, TokenValue};
+use super::{lex, mark_erroneous_source, preprocess, Op, Sym, Token, TokenValue};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Term {
@@ -496,7 +496,7 @@ impl ParseTrace {
                                 t.input
                                     .into_iter()
                                     .rev()
-                                    .map(|t| format_token(t))
+                                    .map(format_token)
                                     .chain(["\\#".to_string()].into_iter())
                                     .join("\\ ")
                             } /></td>
