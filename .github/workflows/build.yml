@@ -50,7 +50,7 @@ jobs:
           git tag release
           git push origin --tags
           pushd assignment/dist
-          zip -qr ../dist.zip *
+          zip -qr ../../dist.zip *
           popd
           gh release create release --latest -n "${{ env.TIME }}" dist.zip
         env:
