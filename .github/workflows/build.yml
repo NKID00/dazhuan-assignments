@@ -12,6 +12,13 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
+      - name: Retrieve current time
+        run: |
+          echo "TIME=$(date --iso-8601=seconds --utc)" >> ${GITHUB_ENV}
+      - name: Configure git user
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
       - uses: actions/checkout@v4
       - uses: actions/cache@v3
         id: cargo
@@ -37,9 +44,17 @@ jobs:
         run: |
           cd assignment
           trunk build --release
-      - uses: actions/upload-artifact@v4
-        with:
-          path: assignment/dist/
+      - name: Create release
+        run: |
+          gh release delete release --cleanup-tag -y || true
+          git tag release
+          git push origin --tags
+          pushd assignment/dist
+          zip -qr ../dist.zip *
+          popd
+          gh release create release --latest -n "${{ env.TIME }}" dist.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   deploy:
     needs: build
     uses: NKID00/nkid00.name/.github/workflows/deploy.yml@master
