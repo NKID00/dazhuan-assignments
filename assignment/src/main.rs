@@ -10,7 +10,7 @@ mod linalg;
 fn main() {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
     Shiyanyi::builder()
-        .base_path("assignments")
+        .base_path("g/assignments")
         .section(
             "comp",
             "编译原理",
